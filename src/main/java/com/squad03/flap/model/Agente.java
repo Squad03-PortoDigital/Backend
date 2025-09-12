@@ -2,6 +2,9 @@ package com.squad03.flap.model;
 
 import jakarta.persistence.*;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
 @Table(name = "Agente")
 public class Agente {
@@ -14,18 +17,16 @@ public class Agente {
     private String link;
     private String foto;
 
-    @ManyToOne
-    @JoinColumn(name = "quadro_id")
-    private Quadro quadro;
+    @OneToMany(mappedBy = "agente", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Tarefa> tarefas = new HashSet<>();
 
     public Agente() {
     }
 
-    public Agente(String nome, String link, String foto, Quadro quadro) {
+    public Agente(String nome, String link, String foto) {
         this.nome = nome;
         this.link = link;
         this.foto = foto;
-        this.quadro = quadro;
     }
 
     public int getId() {
@@ -56,12 +57,18 @@ public class Agente {
         this.foto = foto;
     }
 
-    public Quadro getQuadro() {
-        return quadro;
+    public Set<Tarefa> getTarefas() { return tarefas; }
+
+    public void setTarefas(Set<Tarefa> tarefas) {this.tarefas = tarefas; }
+
+    public void adicionarTarefa(Tarefa tarefa) {
+        this.tarefas.add(tarefa);
+        tarefa.setAgente(this);
     }
 
-    public void setQuadro(Quadro quadro) {
-        this.quadro = quadro;
+    public void removerTarefa(Tarefa tarefa) {
+        this.tarefas.remove(tarefa);
+        tarefa.setAgente(null);
     }
 
     @Override
