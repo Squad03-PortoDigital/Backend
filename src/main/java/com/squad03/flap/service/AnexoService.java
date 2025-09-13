@@ -47,6 +47,11 @@ public class AnexoService {
                 .collect(Collectors.toList());
     }
 
+    public Optional<BuscaAnexo> buscarPorId(Long id) {
+        return anexoRepository.findById(id)
+                .map(BuscaAnexo::new);
+    }
+
     @Transactional
     public void deletarAnexo(Long id){
         anexoRepository.deleteById(id);
