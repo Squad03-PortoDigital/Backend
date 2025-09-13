@@ -2,6 +2,7 @@ package com.squad03.flap.service;
 
 import com.squad03.flap.DTO.CadastroAgente;
 import com.squad03.flap.DTO.BuscaAgente;
+import com.squad03.flap.DTO.AtualizacaoAgente;
 import com.squad03.flap.model.Agente;
 import com.squad03.flap.repository.AgenteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,23 @@ public class AgenteService {
         Agente novoAgente = new Agente(dados.nome(), dados.link(), dados.foto());
         Agente agenteSalvo = agenteRepository.save(novoAgente);
         return new BuscaAgente(agenteSalvo);
+    }
+
+    @Transactional
+    public BuscaAgente atualizarAgente(int id, AtualizacaoAgente dados) {
+        Optional<Agente> agenteOptional = agenteRepository.findById(id);
+
+        if (agenteOptional.isEmpty()) {
+            throw new IllegalArgumentException("Agente não encontrado com o ID: " + id);
+        }
+
+        Agente agente = agenteOptional.get();
+        agente.setNome(dados.nome());
+        agente.setLink(dados.link());
+        agente.setFoto(dados.foto());
+
+        Agente agenteAtualizado = agenteRepository.save(agente);
+        return new BuscaAgente(agenteAtualizado);
     }
 
     public List<BuscaAgente> listarTodos() {

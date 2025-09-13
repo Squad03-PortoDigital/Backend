@@ -1,8 +1,6 @@
 package com.squad03.flap.controller;
 
-import com.squad03.flap.DTO.BuscaAgente;
-import com.squad03.flap.DTO.CadastroAnexo;
-import com.squad03.flap.DTO.BuscaAnexo;
+import com.squad03.flap.DTO.*;
 import com.squad03.flap.service.AnexoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -35,6 +33,12 @@ public class AnexoController {
     public ResponseEntity<BuscaAnexo> buscarAnexoPorId(@PathVariable Long id) {
         Optional<BuscaAnexo> anexo = anexoService.buscarPorId(id);
         return anexo.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<BuscaAnexo> atualizarAnexo(@PathVariable long id, @RequestBody AtualizacaoAnexo dados){
+        BuscaAnexo anexoAtualizado = anexoService.atualizarAnexo(id, dados);
+        return ResponseEntity.ok(anexoAtualizado);
     }
 
     @DeleteMapping("/{id}")
