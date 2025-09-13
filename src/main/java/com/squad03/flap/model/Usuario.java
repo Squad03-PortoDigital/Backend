@@ -1,46 +1,74 @@
 package com.squad03.flap.model;
 
 import jakarta.persistence.*;
-
-import java.util.List;
+import java.util.Objects;
 
 @Entity
-@Table(name = "Usuario")
+@Table(name = "usuarios")
 public class Usuario {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "Cargo_id")
+    // Relacionamento Many-to-One com Cargo
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cargo_id", nullable = false)
     private Cargo cargo;
 
-    private String foto;
+    // Relacionamento Many-to-One com Role
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "role_id", nullable = false)
+    private Role role;
+
+    @Lob
+    @Column(name = "foto", columnDefinition = "LONGTEXT")
+    private String foto; // Base64
+
+    @Column(name = "nome", nullable = false, length = 100)
     private String nome;
+
+    @Column(name = "email", nullable = false, unique = true, length = 150)
     private String email;
 
-    @OneToMany(mappedBy = "usuario")
-    private List<UsuarioQuadro> usuarioQuadros;
-    public Usuario() {
-    }
+    @Column(name = "senha", nullable = false, length = 255)
+    private String senha;
 
-    public Usuario (Cargo cargo, String foto, String nome, String email) {
+    // Construtores
+    public Usuario() {}
+
+    public Usuario(Cargo cargo, Role role, String foto, String nome, String email, String senha) {
         this.cargo = cargo;
+        this.role = role;
         this.foto = foto;
         this.nome = nome;
         this.email = email;
+        this.senha = senha;
     }
 
-    public int getId() {
+    // Getters e Setters
+    public Long getId() {
         return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public Cargo getCargo() {
         return cargo;
     }
+
     public void setCargo(Cargo cargo) {
         this.cargo = cargo;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
     }
 
     public String getFoto() {
@@ -65,5 +93,37 @@ public class Usuario {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getSenha() {
+        return senha;
+    }
+
+    public void setSenha(String senha) {
+        this.senha = senha;
+    }
+
+    // equals e hashCode
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Usuario usuario = (Usuario) o;
+        return Objects.equals(id, usuario.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+    // toString
+    @Override
+    public String toString() {
+        return "Usuario{" +
+                "id=" + id +
+                ", nome='" + nome + '\'' +
+                ", email='" + email + '\'' +
+                '}';
     }
 }

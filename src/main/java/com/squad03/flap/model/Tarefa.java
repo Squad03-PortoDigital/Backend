@@ -21,6 +21,14 @@ public class Tarefa {
     @OneToMany(mappedBy = "tarefa", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Anexo> anexos = new HashSet<>();
 
+    @ManyToOne
+    @JoinColumn(name = "empresa_id")
+    private Empresa empresa;
+
+    @ManyToOne
+    @JoinColumn(name = "lista_id")
+    private Lista lista;
+
     public Tarefa() {}
 
     public Long getId() {
@@ -53,5 +61,21 @@ public class Tarefa {
 
     public void setAnexos(Set<Anexo> anexos) {
         this.anexos = anexos;
+    }
+
+    public Empresa getEmpresa() {
+        return empresa;
+    }
+
+    public void setEmpresa(Empresa empresa) {
+        this.empresa = empresa;
+    }
+
+    public Lista getLista() {
+        return lista;
+    }
+
+    public void setLista(Lista lista) {
+        this.lista = lista;
     }
 }
