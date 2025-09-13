@@ -1,28 +1,39 @@
-package com.squad03.flap.model;
-import jakarta.persistence.*;
-import java.util.List;
+package com.squad03.flap.DTO;
+
+import com.squad03.flap.model.Role;
 import java.util.Objects;
 
-@Entity
-@Table(name = "cargos")
-public class Cargo {
+public class RoleDTO {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "nome", nullable = false, length = 100)
     private String nome;
 
-    // Relacionamento One-to-Many com Usuario
-    @OneToMany(mappedBy = "cargo", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Usuario> usuarios;
-
     // Construtores
-    public Cargo() {}
+    public RoleDTO() {}
 
-    public Cargo(String nome) {
+    public RoleDTO(String nome) {
         this.nome = nome;
+    }
+
+    public RoleDTO(Long id, String nome) {
+        this.id = id;
+        this.nome = nome;
+    }
+
+    // Construtor a partir da entidade
+    public RoleDTO(Role role) {
+        if (role != null) {
+            this.id = role.getId();
+            this.nome = role.getNome();
+        }
+    }
+
+    // Converter para entidade
+    public Role toEntity() {
+        Role role = new Role();
+        role.setId(this.id);
+        role.setNome(this.nome);
+        return role;
     }
 
     // Getters e Setters
@@ -42,21 +53,13 @@ public class Cargo {
         this.nome = nome;
     }
 
-    public List<Usuario> getUsuarios() {
-        return usuarios;
-    }
-
-    public void setUsuarios(List<Usuario> usuarios) {
-        this.usuarios = usuarios;
-    }
-
     // equals e hashCode
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Cargo cargo = (Cargo) o;
-        return Objects.equals(id, cargo.id);
+        RoleDTO roleDTO = (RoleDTO) o;
+        return Objects.equals(id, roleDTO.id);
     }
 
     @Override
@@ -67,7 +70,7 @@ public class Cargo {
     // toString
     @Override
     public String toString() {
-        return "Cargo{" +
+        return "RoleDTO{" +
                 "id=" + id +
                 ", nome='" + nome + '\'' +
                 '}';

@@ -1,28 +1,39 @@
-package com.squad03.flap.model;
-import jakarta.persistence.*;
-import java.util.List;
+package com.squad03.flap.DTO;
+
+import com.squad03.flap.model.Cargo;
 import java.util.Objects;
 
-@Entity
-@Table(name = "cargos")
-public class Cargo {
+public class CargoDTO {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "nome", nullable = false, length = 100)
     private String nome;
 
-    // Relacionamento One-to-Many com Usuario
-    @OneToMany(mappedBy = "cargo", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Usuario> usuarios;
-
     // Construtores
-    public Cargo() {}
+    public CargoDTO() {}
 
-    public Cargo(String nome) {
+    public CargoDTO(String nome) {
         this.nome = nome;
+    }
+
+    public CargoDTO(Long id, String nome) {
+        this.id = id;
+        this.nome = nome;
+    }
+
+    // Construtor a partir da entidade
+    public CargoDTO(Cargo cargo) {
+        if (cargo != null) {
+            this.id = cargo.getId();
+            this.nome = cargo.getNome();
+        }
+    }
+
+    // Converter para entidade
+    public Cargo toEntity() {
+        Cargo cargo = new Cargo();
+        cargo.setId(this.id);
+        cargo.setNome(this.nome);
+        return cargo;
     }
 
     // Getters e Setters
@@ -42,21 +53,13 @@ public class Cargo {
         this.nome = nome;
     }
 
-    public List<Usuario> getUsuarios() {
-        return usuarios;
-    }
-
-    public void setUsuarios(List<Usuario> usuarios) {
-        this.usuarios = usuarios;
-    }
-
     // equals e hashCode
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Cargo cargo = (Cargo) o;
-        return Objects.equals(id, cargo.id);
+        CargoDTO cargoDTO = (CargoDTO) o;
+        return Objects.equals(id, cargoDTO.id);
     }
 
     @Override
@@ -67,7 +70,7 @@ public class Cargo {
     // toString
     @Override
     public String toString() {
-        return "Cargo{" +
+        return "CargoDTO{" +
                 "id=" + id +
                 ", nome='" + nome + '\'' +
                 '}';
