@@ -65,4 +65,14 @@ public class Anexo {
     public void setTarefa(Tarefa tarefa) {
         this.tarefa = tarefa;
     }
+
+    public void adicionarTarefa(Tarefa tarefa) {
+        this.setTarefa(tarefa);
+        tarefa.getAnexos().add(this);
+    }
+
+    public void removerTarefa(Tarefa tarefa) {
+        tarefa.getAnexos().remove(this);
+        this.setTarefa(null);
+    }
 }
