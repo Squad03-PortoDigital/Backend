@@ -1,8 +1,9 @@
 package com.squad03.flap.model;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
-
+import java.util.Set;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,44 +25,53 @@ public class Tarefa {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "agente_id")
+    @JoinColumn(name = "agente_id", nullable = false)
     private Agente agente;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "empresa_id", nullable = false)
+    private Empresa empresa;
+
+    @OneToMany(mappedBy = "tarefa", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Anexo> anexos = new HashSet<>();
 
     @Column(nullable = false, length = 100)
     private String titulo;
-    
+
     @Column(columnDefinition = "TEXT")
     private String descricao;
-    
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private StatusTarefa status;
-    
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PrioridadeTarefa prioridade;
-    
+
     @Column(nullable = false)
     private Integer posicao;
-    
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime dtCriacao;
-    
+
     private LocalDateTime dtEntrega;
-    
+
     private LocalDateTime dtConclusao;
-    
+
     @ElementCollection
     @CollectionTable(name = "tarefa_tags", joinColumns = @JoinColumn(name = "tarefa_id"))
     @Column(name = "tag")
     private List<String> tags;
-    
+
     @Column(length = 500)
     private String observacoes;
 
     @PrePersist
     protected void onCreate() {
-        dtCriacao = LocalDateTime.now();
+        if (dtCriacao == null) {
+            dtCriacao = LocalDateTime.now();
+        }
         if (posicao == null) {
             posicao = 0;
         }

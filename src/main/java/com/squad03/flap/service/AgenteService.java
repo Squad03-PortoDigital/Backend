@@ -55,6 +55,11 @@ public class AgenteService {
                 .map(BuscaAgente::new);
     }
 
+    // Novo método para buscar a entidade Agente completa
+    public Optional<Agente> buscarEntidadePorId(int id) {
+        return agenteRepository.findById(id);
+    }
+
     public void deletarAgente(int id){
         agenteRepository.deleteById(id);
     }
