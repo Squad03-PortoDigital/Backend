@@ -59,6 +59,14 @@ public class Tarefa {
     @Column(length = 500)
     private String observacoes;
 
+    @ManyToOne
+    @JoinColumn(name = "empresa_id")
+    private Empresa empresas;
+
+    @ManyToOne
+    @JoinColumn(name = "lista_id")
+    private Lista listas;
+
     @PrePersist
     protected void onCreate() {
         dtCriacao = LocalDateTime.now();
