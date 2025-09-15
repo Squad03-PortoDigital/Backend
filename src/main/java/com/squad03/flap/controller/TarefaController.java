@@ -32,8 +32,8 @@ public class TarefaController {
     @GetMapping
     @Operation(summary = "Listar todas as tarefas", description = "Retorna uma lista com todas as tarefas cadastradas no sistema")
     @ApiResponse(responseCode = "200", description = "Lista de tarefas retornada com sucesso")
-    public ResponseEntity<List<TarefaDTO>> getAllTarefas() {
-        List<TarefaDTO> tarefas = tarefaService.getAllTarefas();
+    public ResponseEntity<List<BuscaTarefa>> getAllTarefas() {
+        List<BuscaTarefa> tarefas = tarefaService.getAllTarefas();
         return ResponseEntity.ok(tarefas);
     }
 
@@ -43,7 +43,7 @@ public class TarefaController {
         @ApiResponse(responseCode = "200", description = "Tarefa encontrada"),
         @ApiResponse(responseCode = "404", description = "Tarefa não encontrada")
     })
-    public ResponseEntity<TarefaDTO> getTarefaById(
+    public ResponseEntity<BuscaTarefa> getTarefaById(
             @Parameter(description = "ID da tarefa") @PathVariable Long id) {
         return tarefaService.getTarefaById(id)
                 .map(tarefa -> ResponseEntity.ok(tarefa))
@@ -56,8 +56,8 @@ public class TarefaController {
         @ApiResponse(responseCode = "201", description = "Tarefa criada com sucesso"),
         @ApiResponse(responseCode = "400", description = "Dados inválidos")
     })
-    public ResponseEntity<TarefaDTO> criarTarefa(
-            @Parameter(description = "Dados para criar a tarefa") @RequestBody CriarTarefaDTO criarTarefaDTO,
+    public ResponseEntity<BuscaTarefa> criarTarefa(
+            @Parameter(description = "Dados para criar a tarefa") @RequestBody CadastroTarefa cadastroTarefa,
             @Parameter(description = "ID do agente responsável") @RequestParam Long agenteId) {
         // Em uma implementação real, você buscaria o agente pelo ID
         // Aqui assumindo que você tem um serviço para buscar agente
@@ -65,7 +65,7 @@ public class TarefaController {
         // O Agente não tem setter para id, pois é gerado automaticamente
         // Você precisaria buscar o agente do banco de dados pelo ID
         
-        TarefaDTO novaTarefa = tarefaService.criarTarefa(criarTarefaDTO, agente);
+        BuscaTarefa novaTarefa = tarefaService.criarTarefa(cadastroTarefa, agente);
         return ResponseEntity.status(HttpStatus.CREATED).body(novaTarefa);
     }
 
@@ -75,9 +75,9 @@ public class TarefaController {
         @ApiResponse(responseCode = "200", description = "Tarefa atualizada com sucesso"),
         @ApiResponse(responseCode = "404", description = "Tarefa não encontrada")
     })
-    public ResponseEntity<TarefaDTO> atualizarTarefa(
+    public ResponseEntity<BuscaTarefa> atualizarTarefa(
             @Parameter(description = "ID da tarefa") @PathVariable Long id,
-            @Parameter(description = "Dados para atualizar") @RequestBody AtualizarTarefaDTO atualizarDTO) {
+            @Parameter(description = "Dados para atualizar") @RequestBody AtualizacaoTarefa atualizarDTO) {
         return tarefaService.atualizarTarefa(id, atualizarDTO)
                 .map(tarefa -> ResponseEntity.ok(tarefa))
                 .orElse(ResponseEntity.notFound().build());
@@ -89,9 +89,9 @@ public class TarefaController {
         @ApiResponse(responseCode = "200", description = "Tarefa movida com sucesso"),
         @ApiResponse(responseCode = "404", description = "Tarefa não encontrada")
     })
-    public ResponseEntity<TarefaDTO> moverTarefa(
+    public ResponseEntity<BuscaTarefa> moverTarefa(
             @Parameter(description = "ID da tarefa") @PathVariable Long id,
-            @Parameter(description = "Nova posição e/ou status") @RequestBody MoverTarefaDTO moverDTO) {
+            @Parameter(description = "Nova posição e/ou status") @RequestBody MoverTarefa moverDTO) {
         return tarefaService.moverTarefa(id, moverDTO)
                 .map(tarefa -> ResponseEntity.ok(tarefa))
                 .orElse(ResponseEntity.notFound().build());
@@ -113,35 +113,35 @@ public class TarefaController {
 
     @GetMapping("/agente/{agenteId}")
     @Operation(summary = "Listar tarefas por agente", description = "Retorna todas as tarefas de um agente específico")
-    public ResponseEntity<List<TarefaDTO>> getTarefasPorAgente(
+    public ResponseEntity<List<BuscaTarefa>> getTarefasPorAgente(
             @Parameter(description = "ID do agente") @PathVariable Long agenteId) {
         // Em uma implementação real, você buscaria o agente pelo ID
         Agente agente = new Agente();
         // Aqui você precisaria buscar o agente do banco de dados
         
-        List<TarefaDTO> tarefas = tarefaService.getTarefasPorAgente(agente);
+        List<BuscaTarefa> tarefas = tarefaService.getTarefasPorAgente(agente);
         return ResponseEntity.ok(tarefas);
     }
 
     @GetMapping("/status/{status}")
     @Operation(summary = "Listar tarefas por status", description = "Retorna todas as tarefas com um status específico")
-    public ResponseEntity<List<TarefaDTO>> getTarefasPorStatus(
+    public ResponseEntity<List<BuscaTarefa>> getTarefasPorStatus(
             @Parameter(description = "Status das tarefas") @PathVariable StatusTarefa status) {
-        List<TarefaDTO> tarefas = tarefaService.getTarefasPorStatus(status);
+        List<BuscaTarefa> tarefas = tarefaService.getTarefasPorStatus(status);
         return ResponseEntity.ok(tarefas);
     }
 
     @GetMapping("/prioridade/{prioridade}")
     @Operation(summary = "Listar tarefas por prioridade", description = "Retorna todas as tarefas com uma prioridade específica")
-    public ResponseEntity<List<TarefaDTO>> getTarefasPorPrioridade(
+    public ResponseEntity<List<BuscaTarefa>> getTarefasPorPrioridade(
             @Parameter(description = "Prioridade das tarefas") @PathVariable PrioridadeTarefa prioridade) {
-        List<TarefaDTO> tarefas = tarefaService.getTarefasPorPrioridade(prioridade);
+        List<BuscaTarefa> tarefas = tarefaService.getTarefasPorPrioridade(prioridade);
         return ResponseEntity.ok(tarefas);
     }
 
     @GetMapping("/buscar")
     @Operation(summary = "Buscar tarefas", description = "Busca tarefas por título ou descrição")
-    public ResponseEntity<List<TarefaDTO>> buscarTarefas(
+    public ResponseEntity<List<BuscaTarefa>> buscarTarefas(
             @Parameter(description = "Título para buscar") @RequestParam(required = false) String titulo,
             @Parameter(description = "Descrição para buscar") @RequestParam(required = false) String descricao) {
         
@@ -159,25 +159,25 @@ public class TarefaController {
     @GetMapping("/atrasadas")
     @Operation(summary = "Listar tarefas atrasadas", description = "Retorna todas as tarefas que passaram do prazo de entrega")
     @ApiResponse(responseCode = "200", description = "Lista de tarefas atrasadas")
-    public ResponseEntity<List<TarefaDTO>> getTarefasAtrasadas() {
-        List<TarefaDTO> tarefas = tarefaService.getTarefasAtrasadas();
+    public ResponseEntity<List<BuscaTarefa>> getTarefasAtrasadas() {
+        List<BuscaTarefa> tarefas = tarefaService.getTarefasAtrasadas();
         return ResponseEntity.ok(tarefas);
     }
 
     @GetMapping("/tag/{tag}")
     @Operation(summary = "Listar tarefas por tag", description = "Retorna todas as tarefas que possuem uma tag específica")
-    public ResponseEntity<List<TarefaDTO>> getTarefasPorTag(
+    public ResponseEntity<List<BuscaTarefa>> getTarefasPorTag(
             @Parameter(description = "Tag para filtrar") @PathVariable String tag) {
-        List<TarefaDTO> tarefas = tarefaService.getTarefasPorTag(tag);
+        List<BuscaTarefa> tarefas = tarefaService.getTarefasPorTag(tag);
         return ResponseEntity.ok(tarefas);
     }
 
     @GetMapping("/periodo")
     @Operation(summary = "Listar tarefas por período", description = "Retorna tarefas com prazo de entrega em um período específico")
-    public ResponseEntity<List<TarefaDTO>> getTarefasPorPeriodo(
+    public ResponseEntity<List<BuscaTarefa>> getTarefasPorPeriodo(
             @Parameter(description = "Data início do período") @RequestParam LocalDateTime dataInicio,
             @Parameter(description = "Data fim do período") @RequestParam LocalDateTime dataFim) {
-        List<TarefaDTO> tarefas = tarefaService.getTarefasPorPeriodo(dataInicio, dataFim);
+        List<BuscaTarefa> tarefas = tarefaService.getTarefasPorPeriodo(dataInicio, dataFim);
         return ResponseEntity.ok(tarefas);
     }
 
