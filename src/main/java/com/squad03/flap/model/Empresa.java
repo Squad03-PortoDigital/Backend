@@ -15,9 +15,19 @@ public class Empresa {
 
     private String nome;
 
+    private String cnpj;
+
+    private String email;
+
+    private String contato;
+
+    private String atuacao;
+
+    private String observacao;
+
     private String foto;
 
-    @OneToMany(mappedBy = "empresa")
+    @OneToMany(mappedBy = "empresas")
     private List<Tarefa> tarefa;
 
     public Empresa() {}
@@ -28,6 +38,11 @@ public class Empresa {
 
     public Empresa(CadastroEmpresa cadastroEmpresa) {
         this.nome = cadastroEmpresa.nome();
+        this.cnpj = cadastroEmpresa.cnpj();
+        this.email = cadastroEmpresa.email();
+        this.contato = cadastroEmpresa.contato();
+        this.atuacao = cadastroEmpresa.atuacao();
+        this.observacao = cadastroEmpresa.observacao();
         this.foto = cadastroEmpresa.foto();
     }
 
@@ -41,6 +56,46 @@ public class Empresa {
 
     public void setNome(String nome) {
         this.nome = nome;
+    }
+
+    public String getCnpj() {
+        return cnpj;
+    }
+
+    public void setCnpj(String cnpj) {
+        this.cnpj = cnpj;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getContato() {
+        return contato;
+    }
+
+    public void setContato(String contato) {
+        this.contato = contato;
+    }
+
+    public String getAtuacao() {
+        return atuacao;
+    }
+
+    public void setAtuacao(String atuacao) {
+        this.atuacao = atuacao;
+    }
+
+    public String getObservacao() {
+        return observacao;
+    }
+
+    public void setObservacao(String observacao) {
+        this.observacao = observacao;
     }
 
     public String getFoto() {
