@@ -151,4 +151,11 @@ public class TarefaController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    @GetMapping("/{id}/anexos")
+    public ResponseEntity<List<BuscaAnexo>> getAnexosPorTarefa(
+            @PathVariable Long id) {
+        List<BuscaAnexo> anexos = tarefaService.getAnexosPorTarefa(id);
+        return ResponseEntity.ok(anexos);
+    }
 }
