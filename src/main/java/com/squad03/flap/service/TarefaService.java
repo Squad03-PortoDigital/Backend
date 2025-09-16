@@ -23,7 +23,7 @@ public class TarefaService {
     @Autowired
     private TarefaRepository tarefaRepository;
 
-    public BuscaTarefa criarTarefa(CadastroTarefa cadastroTarefa, Agente agente) {
+    public TarefaDTO criarTarefa(CriarTarefaDTO criarTarefaDTO, Agente agente) {
         try {
             Integer proximaPosicao = tarefaRepository.findMaxPosicaoByAgenteAndStatus(agente, StatusTarefa.A_FAZER);
             if (proximaPosicao == null) {
@@ -34,12 +34,12 @@ public class TarefaService {
 
             Tarefa novaTarefa = Tarefa.builder()
                     .agente(agente)
-                    .titulo(cadastroTarefa.titulo())
-                    .descricao(cadastroTarefa.descricao())
-                    .prioridade(cadastroTarefa.prioridade() != null ? cadastroTarefa.prioridade() : PrioridadeTarefa.MEDIA)
-                    .dtEntrega(cadastroTarefa.dtEntrega())
-                    .tags(cadastroTarefa.tags() != null ? cadastroTarefa.tags() : new ArrayList<>())
-                    .observacoes(cadastroTarefa.observacoes())
+                    .titulo(criarTarefaDTO.titulo())
+                    .descricao(criarTarefaDTO.descricao())
+                    .prioridade(criarTarefaDTO.prioridade() != null ? criarTarefaDTO.prioridade() : PrioridadeTarefa.MEDIA)
+                    .dtEntrega(criarTarefaDTO.dtEntrega())
+                    .tags(criarTarefaDTO.tags() != null ? criarTarefaDTO.tags() : new ArrayList<>())
+                    .observacoes(criarTarefaDTO.observacoes())
                     .status(StatusTarefa.A_FAZER)
                     .posicao(proximaPosicao)
                     .build();
@@ -51,7 +51,7 @@ public class TarefaService {
         }
     }
     
-    public List<BuscaTarefa> getAllTarefas() {
+    public List<TarefaDTO> getAllTarefas() {
         try {
             return tarefaRepository.findAll().stream()
                     .map(this::converterParaDTO)
@@ -61,7 +61,7 @@ public class TarefaService {
         }
     }
 
-    public Optional<BuscaTarefa> getTarefaById(Long id) {
+    public Optional<TarefaDTO> getTarefaById(Long id) {
         try {
             return tarefaRepository.findById(id)
                     .map(this::converterParaDTO);
@@ -70,7 +70,7 @@ public class TarefaService {
         }
     }
 
-    public List<BuscaTarefa> getTarefasPorAgente(Agente agente) {
+    public List<TarefaDTO> getTarefasPorAgente(Agente agente) {
         try {
             return tarefaRepository.findByAgenteOrderByPosicaoAsc(agente).stream()
                     .map(this::converterParaDTO)
@@ -80,7 +80,7 @@ public class TarefaService {
         }
     }
 
-    public List<BuscaTarefa> getTarefasPorStatus(StatusTarefa status) {
+    public List<TarefaDTO> getTarefasPorStatus(StatusTarefa status) {
         try {
             return tarefaRepository.findByStatusOrderByPosicaoAsc(status).stream()
                     .map(this::converterParaDTO)
@@ -90,7 +90,7 @@ public class TarefaService {
         }
     }
 
-    public List<BuscaTarefa> getTarefasPorPrioridade(PrioridadeTarefa prioridade) {
+    public List<TarefaDTO> getTarefasPorPrioridade(PrioridadeTarefa prioridade) {
         try {
             return tarefaRepository.findByPrioridade(prioridade).stream()
                     .map(this::converterParaDTO)
@@ -100,7 +100,7 @@ public class TarefaService {
         }
     }
 
-    public Optional<BuscaTarefa> atualizarTarefa(Long id, AtualizacaoTarefa atualizarDTO) {
+    public Optional<TarefaDTO> atualizarTarefa(Long id, AtualizarTarefaDTO atualizarDTO) {
         try {
             return tarefaRepository.findById(id)
                     .map(tarefa -> {
@@ -133,7 +133,7 @@ public class TarefaService {
         }
     }
 
-    public Optional<BuscaTarefa> moverTarefa(Long id, MoverTarefa moverDTO) {
+    public Optional<TarefaDTO> moverTarefa(Long id, MoverTarefaDTO moverDTO) {
         try {
             return tarefaRepository.findById(id)
                     .map(tarefa -> {
@@ -166,7 +166,7 @@ public class TarefaService {
         }
     }
 
-    public List<BuscaTarefa> buscarTarefasPorTitulo(String titulo) {
+    public List<TarefaDTO> buscarTarefasPorTitulo(String titulo) {
         try {
             return tarefaRepository.findByTituloContainingIgnoreCase(titulo).stream()
                     .map(this::converterParaDTO)
@@ -176,7 +176,7 @@ public class TarefaService {
         }
     }
 
-    public List<BuscaTarefa> buscarTarefasPorDescricao(String descricao) {
+    public List<TarefaDTO> buscarTarefasPorDescricao(String descricao) {
         try {
             return tarefaRepository.findByDescricaoContainingIgnoreCase(descricao).stream()
                     .map(this::converterParaDTO)
@@ -186,7 +186,7 @@ public class TarefaService {
         }
     }
 
-    public List<BuscaTarefa> getTarefasAtrasadas() {
+    public List<TarefaDTO> getTarefasAtrasadas() {
         try {
             return tarefaRepository.findTarefasAtrasadas().stream()
                     .map(this::converterParaDTO)
@@ -196,7 +196,7 @@ public class TarefaService {
         }
     }
 
-    public List<BuscaTarefa> getTarefasPorTag(String tag) {
+    public List<TarefaDTO> getTarefasPorTag(String tag) {
         try {
             return tarefaRepository.findByTag(tag).stream()
                     .map(this::converterParaDTO)
@@ -206,7 +206,7 @@ public class TarefaService {
         }
     }
 
-    public List<BuscaTarefa> getTarefasPorPeriodo(LocalDateTime dataInicio, LocalDateTime dataFim) {
+    public List<TarefaDTO> getTarefasPorPeriodo(LocalDateTime dataInicio, LocalDateTime dataFim) {
         try {
             return tarefaRepository.findByDtEntregaBetween(dataInicio, dataFim).stream()
                     .map(this::converterParaDTO)
@@ -224,9 +224,9 @@ public class TarefaService {
         }
     }
 
-    private BuscaTarefa converterParaDTO(Tarefa tarefa) {
+    private TarefaDTO converterParaDTO(Tarefa tarefa) {
         try {
-            return new BuscaTarefa(
+            return new TarefaDTO(
                 tarefa.getId(),
                 tarefa.getAgente() != null ? Long.valueOf(tarefa.getAgente().getId()) : null,
                 tarefa.getTitulo(),

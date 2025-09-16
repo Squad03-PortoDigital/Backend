@@ -5,7 +5,7 @@ import com.squad03.flap.model.Tarefa.PrioridadeTarefa;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public record BuscaTarefa(
+public record TarefaDTO(
     Long id,
     Long agenteId,
     String titulo,
