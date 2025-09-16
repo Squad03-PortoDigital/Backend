@@ -34,7 +34,7 @@ public class EmpresaController {
     }
 
     @GetMapping("/{id}")
-    public Empresa findById(@RequestParam int id) {
+    public Empresa findById(@PathVariable int  id) {
         return empresaService.buscarEmpresaPorId(id);
     }
 

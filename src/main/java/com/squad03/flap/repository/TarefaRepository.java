@@ -29,6 +29,8 @@ public interface TarefaRepository extends JpaRepository<Tarefa, Long> {
     List<Tarefa> findByTituloContainingIgnoreCase(String titulo);
     
     List<Tarefa> findByDescricaoContainingIgnoreCase(String descricao);
+
+    List<Tarefa> findByEmpresaId(int empresaId);
     
     List<Tarefa> findByDtEntregaBetween(LocalDateTime dataInicio, LocalDateTime dataFim);
     

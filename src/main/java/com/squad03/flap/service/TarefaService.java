@@ -342,6 +342,16 @@ public class TarefaService {
         }
     }
 
+    public List<BuscaTarefa> getTarefasPorEmpresa(int empresaId){
+        if (!empresaRepository.existsById(empresaId)) {
+            throw new TarefaValidacaoException("Empresa não encontrada com ID: " + empresaId);
+        }
+
+        return tarefaRepository.findByEmpresaId(empresaId).stream()
+                .map(this::converterParaDTO)
+                .toList();
+    }
+
     private BuscaTarefa converterParaDTO(Tarefa tarefa) {
         try {
             return new BuscaTarefa(

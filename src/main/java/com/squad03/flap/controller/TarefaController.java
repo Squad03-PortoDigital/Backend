@@ -152,6 +152,24 @@ public class TarefaController {
         }
     }
 
+    @GetMapping("/empresa/{empresaId}")
+    @Operation(summary = "Listar tarefas por empresa", description = "Retorna todas as tarefas de uma empresa específica")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Tarefas retornadas com sucesso"),
+            @ApiResponse(responseCode = "404", description = "Empresa não encontrada")
+    })
+    public ResponseEntity<List<BuscaTarefa>> getTarefasPorEmpresa(
+            @Parameter(description = "ID da empresa") @PathVariable int empresaId) {
+        try {
+            List<BuscaTarefa> tarefas = tarefaService.getTarefasPorEmpresa(empresaId);
+            return ResponseEntity.ok(tarefas);
+        } catch (TarefaValidacaoException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @GetMapping("/{id}/anexos")
     public ResponseEntity<List<BuscaAnexo>> getAnexosPorTarefa(
             @PathVariable Long id) {
