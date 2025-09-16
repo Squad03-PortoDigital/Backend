@@ -32,6 +32,10 @@ public class Tarefa {
     @JoinColumn(name = "empresa_id", nullable = false)
     private Empresa empresa;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "lista_id", nullable = false)
+    private Lista lista;
+
     @OneToMany(mappedBy = "tarefa", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Anexo> anexos = new HashSet<>();
 

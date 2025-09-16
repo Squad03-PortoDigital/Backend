@@ -17,20 +17,17 @@ import java.util.stream.Collectors;
 @Service
 public class ListaService {
 
-    private ListaRepository repository;
-
     @Autowired
-    public ListaService(ListaRepository repository) {
-        this.repository = repository;
-    }
+    private ListaRepository repository;
 
     @Transactional
     public BuscaLista cadastrarLista(CadastroLista cadastroLista) {
-        Lista listaNova = repository.save(new Lista(cadastroLista));
-        return new BuscaLista(listaNova);
+        Lista listaNova = new Lista(cadastroLista);
+        Lista listaSalva = repository.save(listaNova);
+        return new BuscaLista(listaSalva);
     }
 
-    public Optional<BuscaLista> buscarListaPorId(int id) {
+    public Optional<BuscaLista> buscarListaPorId(Long id) {
         return repository.findById(id).map(BuscaLista::new);
     }
 
@@ -39,20 +36,30 @@ public class ListaService {
     }
 
     @Transactional
-    public BuscaLista AtualizarLista(int id, AtualizacaoLista atualizacaoLista) {
-        Lista Lista = repository.findById(id).get();
+    public Optional<BuscaLista> atualizarLista(Long id, AtualizacaoLista atualizacaoLista) {
+        return repository.findById(id)
+                .map(lista -> {
 
-        Lista.setNome(atualizacaoLista.nome());
-        Lista.setPosicao(atualizacaoLista.posicao());
-        Lista.setCor(atualizacaoLista.cor());
+                    if (atualizacaoLista.nome() != null) {
+                        lista.setNome(atualizacaoLista.nome());
+                    }
+                    if (atualizacaoLista.posicao() != 0) {
+                        lista.setPosicao(atualizacaoLista.posicao());
+                    }
+                    if (atualizacaoLista.cor() != null) {
+                        lista.setCor(atualizacaoLista.cor());
+                    }
 
-        Lista novaLista = repository.save(Lista);
-
-        return new BuscaLista(novaLista);
+                    return new BuscaLista(repository.save(lista));
+                });
     }
 
     @Transactional
-    public void excluirLista(int id) {
-        repository.deleteById(id);
+    public boolean excluirLista(Long id) {
+        if (repository.existsById(id)) {
+            repository.deleteById(id);
+            return true;
+        }
+        return false;
     }
 }

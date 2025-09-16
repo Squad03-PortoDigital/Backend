@@ -9,6 +9,7 @@ public record BuscaTarefa(
         Long id,
         int agenteId,
         int empresaId,
+        Long listaId,
         String titulo,
         String descricao,
         StatusTarefa status,

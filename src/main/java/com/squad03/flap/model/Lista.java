@@ -11,14 +11,14 @@ public class Lista {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Long id;
 
     private String nome;
     private int posicao;
     private String cor;
 
     @OneToMany(mappedBy = "lista")
-    private List<Tarefa> tarefa;
+    private List<Tarefa> tarefas;
 
     public Lista() {
     }
@@ -35,7 +35,7 @@ public class Lista {
         this.cor = cadastroLista.cor();
     }
 
-    public int getId() {
+    public Long getId() {
         return id;
     }
 
@@ -64,7 +64,7 @@ public class Lista {
     }
 
     public List<Tarefa> getTarefa() {
-        return tarefa;
+        return tarefas;
     }
 
     @Override
@@ -73,11 +73,5 @@ public class Lista {
 
         return id == lista.id;
     }
-
-    @Override
-    public int hashCode() {
-        return id;
-    }
-
 
 }

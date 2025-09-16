@@ -16,13 +16,9 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/listas")
 public class ListaController {
-    
-    private ListaService listaService;
-    
+
     @Autowired
-    public ListaController(ListaService listaService) {
-        this.listaService = listaService;
-    }
+    private ListaService listaService;
 
     @PostMapping
     public ResponseEntity<BuscaLista> createLista(@RequestBody CadastroLista dados) {
@@ -37,20 +33,22 @@ public class ListaController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<BuscaLista> findById(@PathVariable int id) {
+    public ResponseEntity<BuscaLista> findById(@PathVariable Long id) {
         Optional<BuscaLista> lista = listaService.buscarListaPorId(id);
         return lista.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<BuscaLista> updateLista(@PathVariable int id, @RequestBody AtualizacaoLista dados) {
-        BuscaLista lista = listaService.AtualizarLista(id, dados);
-        return ResponseEntity.ok().body(lista);
+    public ResponseEntity<BuscaLista> updateLista(@PathVariable Long id, @RequestBody AtualizacaoLista dados) {
+        Optional<BuscaLista> lista = listaService.atualizarLista(id, dados);
+        return lista.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
-    @DeleteMapping
-    public ResponseEntity<Void> deleteLista(@PathVariable int id) {
-        listaService.excluirLista(id);
-        return ResponseEntity.noContent().build();
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteLista(@PathVariable Long id) {
+        if(listaService.excluirLista(id)){
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.notFound().build();
     }
 }

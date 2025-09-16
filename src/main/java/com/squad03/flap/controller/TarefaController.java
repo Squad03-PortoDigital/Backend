@@ -75,7 +75,7 @@ public class TarefaController {
             BuscaTarefa novaTarefa = tarefaService.criarTarefa(cadastroTarefa);
             return ResponseEntity.status(HttpStatus.CREATED).body(novaTarefa);
         } catch (TarefaValidacaoException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body("Erro de validação: " + e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Erro interno do servidor: " + e.getMessage());

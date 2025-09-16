@@ -33,6 +33,9 @@ public class TarefaService {
     @Autowired
     private EmpresaRepository empresaRepository;
 
+    @Autowired
+    private ListaRepository listaRepository;
+
     /**
      * Cria uma nova tarefa, buscando as entidades relacionadas e validando os dados.
      * @param cadastroTarefa O DTO com os dados da tarefa a ser criada.
@@ -53,6 +56,12 @@ public class TarefaService {
             }
             Empresa empresa = empresaOptional.get();
 
+            Optional<Lista> listaOptional = listaRepository.findById(cadastroTarefa.listaId());
+            if (listaOptional.isEmpty()) {
+                throw new TarefaValidacaoException("Lista não encontrada com ID: " + cadastroTarefa.listaId());
+            }
+            Lista lista = listaOptional.get();
+
             Integer proximaPosicao = tarefaRepository.findMaxPosicaoByAgenteAndStatus(agente, StatusTarefa.A_FAZER);
             if (proximaPosicao == null) {
                 proximaPosicao = 0;
@@ -63,6 +72,7 @@ public class TarefaService {
             Tarefa novaTarefa = Tarefa.builder()
                     .agente(agente)
                     .empresa(empresa)
+                    .lista(lista)
                     .titulo(cadastroTarefa.titulo())
                     .descricao(cadastroTarefa.descricao())
                     .prioridade(cadastroTarefa.prioridade() != null ? cadastroTarefa.prioridade() : PrioridadeTarefa.MEDIA)
@@ -358,6 +368,7 @@ public class TarefaService {
                     tarefa.getId(),
                     tarefa.getAgente() != null ? tarefa.getAgente().getId() : null,
                     tarefa.getEmpresa() != null ? tarefa.getEmpresa().getId() : null,
+                    tarefa.getLista() != null ? tarefa.getLista().getId() : null, // <-- Adicionado ao retorno
                     tarefa.getTitulo(),
                     tarefa.getDescricao(),
                     tarefa.getStatus(),
