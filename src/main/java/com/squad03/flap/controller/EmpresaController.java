@@ -46,7 +46,7 @@ public class EmpresaController {
         BuscaEmpresa empresa = empresaService.AtualizarEmpresa(id, dados);
         return ResponseEntity.ok(empresa);    }
 
-    @DeleteMapping
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteEmpresa(@PathVariable int id) {
         empresaService.excluirEmpresa(id);
         return ResponseEntity.noContent().build();

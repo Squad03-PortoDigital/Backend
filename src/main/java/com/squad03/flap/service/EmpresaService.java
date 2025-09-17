@@ -43,6 +43,11 @@ public class EmpresaService {
         Empresa empresa = empresaRepository.findById(id).get();
 
         empresa.setNome(atualizacaoEmpresa.nome());
+        empresa.setCnpj(atualizacaoEmpresa.cnpj());
+        empresa.setEmail(atualizacaoEmpresa.email());
+        empresa.setContato(atualizacaoEmpresa.contato());
+        empresa.setAtuacao(atualizacaoEmpresa.atuacao());
+        empresa.setObservacao(atualizacaoEmpresa.observacao());
         empresa.setFoto(atualizacaoEmpresa.foto());
 
         Empresa empresaAtualizada = empresaRepository.save(empresa);

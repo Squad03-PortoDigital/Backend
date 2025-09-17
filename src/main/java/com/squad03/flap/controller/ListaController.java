@@ -48,7 +48,7 @@ public class ListaController {
         return ResponseEntity.ok().body(lista);
     }
 
-    @DeleteMapping
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteLista(@PathVariable int id) {
         listaService.excluirLista(id);
         return ResponseEntity.noContent().build();
