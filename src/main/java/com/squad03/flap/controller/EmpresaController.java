@@ -4,6 +4,7 @@ import com.squad03.flap.DTO.AtualizacaoEmpresa;
 import com.squad03.flap.DTO.CadastroEmpresa;
 import com.squad03.flap.DTO.BuscaEmpresa;
 import com.squad03.flap.service.EmpresaService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +25,7 @@ public class EmpresaController {
     }
 
     @PostMapping
-    public ResponseEntity<BuscaEmpresa> createEmpresa(@RequestBody CadastroEmpresa dados) {
+    public ResponseEntity<BuscaEmpresa> createEmpresa(@RequestBody @Valid CadastroEmpresa dados) {
         BuscaEmpresa empresaSalva = empresaService.cadastrarEmpresa(dados);
         return new ResponseEntity<>(empresaSalva, HttpStatus.CREATED);
     }

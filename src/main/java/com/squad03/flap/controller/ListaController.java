@@ -5,6 +5,7 @@ import com.squad03.flap.DTO.BuscaLista;
 import com.squad03.flap.DTO.CadastroLista;
 import com.squad03.flap.service.ListaService;
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,7 +26,7 @@ public class ListaController {
     }
 
     @PostMapping
-    public ResponseEntity<BuscaLista> createLista(@RequestBody CadastroLista dados) {
+    public ResponseEntity<BuscaLista> createLista(@RequestBody @Valid CadastroLista dados) {
         BuscaLista lista = listaService.cadastrarLista(dados);
         return new ResponseEntity<>(lista,HttpStatus.CREATED);
     }
