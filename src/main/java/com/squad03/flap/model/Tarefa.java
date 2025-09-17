@@ -2,6 +2,7 @@ package com.squad03.flap.model;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -66,6 +67,57 @@ public class Tarefa {
     @ManyToOne
     @JoinColumn(name = "lista_id")
     private Lista listas;
+
+    @OneToMany
+    private Set<Anexo> anexos;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getTitulo() {
+        return titulo;
+    }
+
+    public void setTitulo(String titulo) {
+        this.titulo = titulo;
+    }
+
+    public Agente getAgente() {
+        return agente;
+    }
+
+    public void setAgente(Agente agente) {
+        this.agente = agente;
+    }
+
+    public Set<Anexo> getAnexos() {
+        return anexos;
+    }
+
+    public void setAnexos(Set<Anexo> anexos) {
+        this.anexos = anexos;
+    }
+
+    public Empresa getEmpresa() {
+        return empresas;
+    }
+
+    public void setEmpresa(Empresa empresa) {
+        this.empresas = empresa;
+    }
+
+    public Lista getLista() {
+        return listas;
+    }
+
+    public void setLista(Lista lista) {
+        this.listas = lista;
+    }
 
     @PrePersist
     protected void onCreate() {
