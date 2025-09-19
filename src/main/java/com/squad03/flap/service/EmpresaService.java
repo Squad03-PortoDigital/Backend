@@ -30,7 +30,7 @@ public class EmpresaService {
         return new BuscaEmpresa(empresaSalva);
     }
 
-    public Optional<BuscaEmpresa> buscarEmpresaPorId(int id) {
+    public Optional<BuscaEmpresa> buscarEmpresaPorId(Long id) {
         return empresaRepository.findById(id).map(BuscaEmpresa::new);
     }
 
@@ -39,7 +39,7 @@ public class EmpresaService {
     }
 
     @Transactional
-    public BuscaEmpresa AtualizarEmpresa(int id, AtualizacaoEmpresa atualizacaoEmpresa) {
+    public BuscaEmpresa AtualizarEmpresa(Long id, AtualizacaoEmpresa atualizacaoEmpresa) {
         Empresa empresa = empresaRepository.findById(id).get();
 
         empresa.setNome(atualizacaoEmpresa.nome());
@@ -56,7 +56,7 @@ public class EmpresaService {
     }
 
     @Transactional
-    public void excluirEmpresa(int id) {
+    public void excluirEmpresa(Long id) {
         empresaRepository.deleteById(id);
     }
 }

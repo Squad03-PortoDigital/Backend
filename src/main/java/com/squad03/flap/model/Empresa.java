@@ -11,7 +11,7 @@ public class Empresa {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Long id;
 
     private String nome;
 
@@ -46,7 +46,7 @@ public class Empresa {
         this.foto = cadastroEmpresa.foto();
     }
 
-    public int getId() {
+    public Long getId() {
         return id;
     }
 
@@ -114,11 +114,11 @@ public class Empresa {
     public final boolean equals(Object o) {
         if (!(o instanceof Empresa empresa)) return false;
 
-        return id == empresa.id;
+        return id.equals(empresa.id);
     }
 
     @Override
     public int hashCode() {
-        return id;
+        return id.hashCode();
     }
 }

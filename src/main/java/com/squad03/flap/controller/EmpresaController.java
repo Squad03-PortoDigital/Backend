@@ -37,18 +37,18 @@ public class EmpresaController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<BuscaEmpresa> findById(@PathVariable int id) {
+    public ResponseEntity<BuscaEmpresa> findById(@PathVariable Long id) {
         Optional<BuscaEmpresa> empresa = empresaService.buscarEmpresaPorId(id);
         return empresa.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<BuscaEmpresa> updateEmpresa(@PathVariable int id, @RequestBody AtualizacaoEmpresa dados) {
+    public ResponseEntity<BuscaEmpresa> updateEmpresa(@PathVariable Long id, @RequestBody AtualizacaoEmpresa dados) {
         BuscaEmpresa empresa = empresaService.AtualizarEmpresa(id, dados);
         return ResponseEntity.ok(empresa);    }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteEmpresa(@PathVariable int id) {
+    public ResponseEntity<Void> deleteEmpresa(@PathVariable Long id) {
         empresaService.excluirEmpresa(id);
         return ResponseEntity.noContent().build();
     }

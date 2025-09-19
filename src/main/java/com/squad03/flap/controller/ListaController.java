@@ -38,19 +38,19 @@ public class ListaController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<BuscaLista> findById(@PathVariable int id) {
+    public ResponseEntity<BuscaLista> findById(@PathVariable Long id) {
         Optional<BuscaLista> lista = listaService.buscarListaPorId(id);
         return lista.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<BuscaLista> updateLista(@PathVariable int id, @RequestBody AtualizacaoLista dados) {
+    public ResponseEntity<BuscaLista> updateLista(@PathVariable Long id, @RequestBody AtualizacaoLista dados) {
         BuscaLista lista = listaService.AtualizarLista(id, dados);
         return ResponseEntity.ok().body(lista);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteLista(@PathVariable int id) {
+    public ResponseEntity<Void> deleteLista(@PathVariable Long id) {
         listaService.excluirLista(id);
         return ResponseEntity.noContent().build();
     }

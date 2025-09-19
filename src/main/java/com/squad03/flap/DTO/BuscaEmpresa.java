@@ -2,7 +2,7 @@ package com.squad03.flap.DTO;
 
 import com.squad03.flap.model.Empresa;
 
-public record BuscaEmpresa(int id, String nome, String cnpj, String email, String contato,
+public record BuscaEmpresa(Long id, String nome, String cnpj, String email, String contato,
                            String atuacao, String observacao, String foto) {
     public BuscaEmpresa(Empresa empresa) {
 

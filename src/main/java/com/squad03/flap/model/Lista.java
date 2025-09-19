@@ -12,7 +12,7 @@ public class Lista {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Long id;
 
     private String nome;
     private int posicao;
@@ -36,7 +36,7 @@ public class Lista {
         this.cor = cadastroLista.cor();
     }
 
-    public int getId() {
+    public Long getId() {
         return id;
     }
 
@@ -72,13 +72,11 @@ public class Lista {
     public final boolean equals(Object o) {
         if (!(o instanceof Lista lista)) return false;
 
-        return id == lista.id;
+        return id.equals(lista.id);
     }
 
     @Override
     public int hashCode() {
-        return id;
+        return id.hashCode();
     }
-
-
 }

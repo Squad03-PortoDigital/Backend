@@ -30,7 +30,7 @@ public class ListaService {
         return new BuscaLista(listaNova);
     }
 
-    public Optional<BuscaLista> buscarListaPorId(int id) {
+    public Optional<BuscaLista> buscarListaPorId(Long id) {
         return repository.findById(id).map(BuscaLista::new);
     }
 
@@ -39,7 +39,7 @@ public class ListaService {
     }
 
     @Transactional
-    public BuscaLista AtualizarLista(int id, AtualizacaoLista atualizacaoLista) {
+    public BuscaLista AtualizarLista(Long id, AtualizacaoLista atualizacaoLista) {
         Lista Lista = repository.findById(id).get();
 
         Lista.setNome(atualizacaoLista.nome());
@@ -52,7 +52,7 @@ public class ListaService {
     }
 
     @Transactional
-    public void excluirLista(int id) {
+    public void excluirLista(Long id) {
         repository.deleteById(id);
     }
 }
