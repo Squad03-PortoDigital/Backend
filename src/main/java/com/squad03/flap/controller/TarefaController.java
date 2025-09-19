@@ -57,15 +57,9 @@ public class TarefaController {
         @ApiResponse(responseCode = "400", description = "Dados inválidos")
     })
     public ResponseEntity<TarefaDTO> criarTarefa(
-            @Parameter(description = "Dados para criar a tarefa") @RequestBody CriarTarefaDTO criarTarefaDTO,
-            @Parameter(description = "ID do agente responsável") @RequestParam Long agenteId) {
-        // Em uma implementação real, você buscaria o agente pelo ID
-        // Aqui assumindo que você tem um serviço para buscar agente
-        Agente agente = new Agente();
-        // O Agente não tem setter para id, pois é gerado automaticamente
-        // Você precisaria buscar o agente do banco de dados pelo ID
+            @Parameter(description = "Dados para criar a tarefa") @RequestBody CriarTarefaDTO criarTarefaDTO) {
         
-        TarefaDTO novaTarefa = tarefaService.criarTarefa(criarTarefaDTO, agente);
+        TarefaDTO novaTarefa = tarefaService.criarTarefa(criarTarefaDTO, criarTarefaDTO.agenteId(), criarTarefaDTO.empresaId(), criarTarefaDTO.listaId());
         return ResponseEntity.status(HttpStatus.CREATED).body(novaTarefa);
     }
 

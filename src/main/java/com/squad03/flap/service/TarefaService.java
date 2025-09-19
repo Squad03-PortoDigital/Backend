@@ -1,5 +1,10 @@
 package com.squad03.flap.service;
 
+import com.squad03.flap.model.Empresa;
+import com.squad03.flap.model.Lista;
+import com.squad03.flap.repository.AgenteRepository;
+import com.squad03.flap.repository.EmpresaRepository;
+import com.squad03.flap.repository.ListaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +28,23 @@ public class TarefaService {
     @Autowired
     private TarefaRepository tarefaRepository;
 
-    public TarefaDTO criarTarefa(CriarTarefaDTO criarTarefaDTO, Agente agente) {
+    @Autowired
+    private AgenteRepository agenteRepository;
+
+    @Autowired
+    private EmpresaRepository empresaRepository;
+
+    @Autowired
+    private ListaRepository listaRepository;
+
+    public TarefaDTO criarTarefa(CriarTarefaDTO criarTarefaDTO,int agenteId, Long empresaId, Long listaId) {
+
+        Agente agente = agenteRepository.findById(agenteId).get();
+
+        Empresa empresa = empresaRepository.findById(empresaId).get();
+
+        Lista lista = listaRepository.findById(listaId).get();
+
         try {
             Integer proximaPosicao = tarefaRepository.findMaxPosicaoByAgenteAndStatus(agente, StatusTarefa.A_FAZER);
             if (proximaPosicao == null) {
@@ -42,6 +63,8 @@ public class TarefaService {
                     .observacoes(criarTarefaDTO.observacoes())
                     .status(StatusTarefa.A_FAZER)
                     .posicao(proximaPosicao)
+                    .empresas(empresa)
+                    .listas(lista)
                     .build();
 
             Tarefa tarefaSalva = tarefaRepository.save(novaTarefa);
