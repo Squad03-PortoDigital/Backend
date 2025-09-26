@@ -1,5 +1,6 @@
 package com.squad03.flap.controller;
 
+import com.squad03.flap.model.Empresa;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -130,6 +131,14 @@ public class TarefaController {
     public ResponseEntity<List<TarefaDTO>> getTarefasPorPrioridade(
             @Parameter(description = "Prioridade das tarefas") @PathVariable PrioridadeTarefa prioridade) {
         List<TarefaDTO> tarefas = tarefaService.getTarefasPorPrioridade(prioridade);
+        return ResponseEntity.ok(tarefas);
+    }
+
+    @GetMapping("/empresa/{empresa}")
+    @Operation(summary = "Listar tarefas por empresa", description = "Retorna todas as tarefas com uma empresa específica")
+    public ResponseEntity<List<TarefaDTO>> getTarefasPorEmpresa(
+            @Parameter(description = "Empresa das tarefas") @PathVariable Empresa empresa) {
+        List<TarefaDTO> tarefas = tarefaService.getTarefasPorEmpresa(empresa);
         return ResponseEntity.ok(tarefas);
     }
 
