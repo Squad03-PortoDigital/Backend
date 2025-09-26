@@ -18,7 +18,7 @@ public class Lista {
     private int posicao;
     private String cor;
 
-    @OneToMany(mappedBy = "listas")
+    @OneToMany(mappedBy = "lista")
     private List<Tarefa> tarefa;
 
     public Lista() {
