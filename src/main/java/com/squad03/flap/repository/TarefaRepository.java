@@ -3,6 +3,7 @@ package com.squad03.flap.repository;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.squad03.flap.model.Empresa;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -17,6 +18,8 @@ import com.squad03.flap.model.Tarefa.PrioridadeTarefa;
 public interface TarefaRepository extends JpaRepository<Tarefa, Long> {
 
     List<Tarefa> findByAgente(Agente agente);
+
+    List<Tarefa> findByEmpresa(Empresa empresa);
     
     List<Tarefa> findByAgenteOrderByPosicaoAsc(Agente agente);
     

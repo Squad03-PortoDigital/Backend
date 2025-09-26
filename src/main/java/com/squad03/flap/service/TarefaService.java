@@ -63,8 +63,8 @@ public class TarefaService {
                     .observacoes(criarTarefaDTO.observacoes())
                     .status(StatusTarefa.A_FAZER)
                     .posicao(proximaPosicao)
-                    .empresas(empresa)
-                    .listas(lista)
+                    .empresa(empresa)
+                    .lista(lista)
                     .build();
 
             Tarefa tarefaSalva = tarefaRepository.save(novaTarefa);
@@ -239,6 +239,16 @@ public class TarefaService {
         }
     }
 
+    public List<TarefaDTO> getTarefasPorEmpresa(Empresa empresa) {
+        try {
+            return tarefaRepository.findByEmpresa(empresa).stream()
+                    .map(this::converterParaDTO)
+                    .toList();
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao buscar tarefas por prioridade: " + e.getMessage(), e);
+        }
+    }
+
     public Long contarTarefasPorAgenteEStatus(Agente agente, StatusTarefa status) {
         try {
             return tarefaRepository.countByAgenteAndStatus(agente, status);
@@ -261,7 +271,9 @@ public class TarefaService {
                 tarefa.getDtEntrega(),
                 tarefa.getDtConclusao(),
                 tarefa.getTags() != null ? tarefa.getTags() : new ArrayList<>(),
-                tarefa.getObservacoes()
+                tarefa.getObservacoes(),
+                tarefa.getEmpresa() != null ? Long.valueOf(tarefa.getEmpresa().getId()):null,
+                tarefa.getLista() != null ? Long.valueOf(tarefa.getLista().getId()):null
             );
         } catch (Exception e) {
             throw new RuntimeException("Erro ao converter tarefa para DTO: " + e.getMessage(), e);
