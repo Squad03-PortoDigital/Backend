@@ -17,5 +17,7 @@ public record TarefaDTO(
     LocalDateTime dtEntrega,
     LocalDateTime dtConclusao,
     List<String> tags,
-    String observacoes
+    String observacoes,
+    Long empresa_id,
+    Long lista_id
 ) {}
