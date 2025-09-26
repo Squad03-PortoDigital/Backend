@@ -27,7 +27,7 @@ public class Empresa {
 
     private String foto;
 
-    @OneToMany(mappedBy = "empresas", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Tarefa> tarefa;
 
     public Empresa() {}

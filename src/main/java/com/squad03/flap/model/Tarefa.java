@@ -62,11 +62,11 @@ public class Tarefa {
 
     @ManyToOne
     @JoinColumn(name = "empresa_id")
-    private Empresa empresas;
+    private Empresa empresa;
 
     @ManyToOne
     @JoinColumn(name = "lista_id")
-    private Lista listas;
+    private Lista lista;
 
     @OneToMany
     private Set<Anexo> anexos;
@@ -104,19 +104,19 @@ public class Tarefa {
     }
 
     public Empresa getEmpresa() {
-        return empresas;
+        return empresa;
     }
 
     public void setEmpresa(Empresa empresa) {
-        this.empresas = empresa;
+        this.empresa = empresa;
     }
 
     public Lista getLista() {
-        return listas;
+        return lista;
     }
 
     public void setLista(Lista lista) {
-        this.listas = lista;
+        this.lista = lista;
     }
 
     @PrePersist
