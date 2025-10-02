@@ -5,6 +5,7 @@ import com.squad03.flap.model.Role;
 import com.squad03.flap.DTO.RoleDTO;
 import com.squad03.flap.DTO.ContadorDTO;
 import com.squad03.flap.service.RoleService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,8 +16,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/roles")
+@RequestMapping("/roles")
 @CrossOrigin(origins = "*")
+@Tag(name = "Roles", description = "Gerenciamento de roles")
 public class RoleController {
 
     @Autowired
