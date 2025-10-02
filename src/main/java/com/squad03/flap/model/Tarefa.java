@@ -29,6 +29,10 @@ public class Tarefa {
     @JoinColumn(name = "lista_id")
     private Lista lista;
 
+    // Relacionamento One-to-Many com Comentario
+    @OneToMany(mappedBy = "tarefa", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Comentario> comentarios = new HashSet<>();
+
     public Tarefa() {}
 
     public Long getId() {
@@ -77,5 +81,13 @@ public class Tarefa {
 
     public void setLista(Lista lista) {
         this.lista = lista;
+    }
+
+    public Set<Comentario> getComentarios() {
+        return comentarios;
+    }
+
+    public void setComentarios(Set<Comentario> comentarios) {
+        this.comentarios = comentarios;
     }
 }

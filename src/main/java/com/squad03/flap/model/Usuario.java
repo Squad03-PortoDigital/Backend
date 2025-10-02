@@ -1,7 +1,9 @@
 package com.squad03.flap.model;
 
 import jakarta.persistence.*;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Table(name = "usuarios")
@@ -33,6 +35,10 @@ public class Usuario {
 
     @Column(name = "senha", nullable = false, length = 255)
     private String senha;
+
+    // Relacionamento One-to-Many com Comentario
+    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Comentario> comentarios = new HashSet<>();
 
     // Construtores
     public Usuario() {}
@@ -101,6 +107,14 @@ public class Usuario {
 
     public void setSenha(String senha) {
         this.senha = senha;
+    }
+
+    public Set<Comentario> getComentarios() {
+        return comentarios;
+    }
+
+    public void setComentarios(Set<Comentario> comentarios) {
+        this.comentarios = comentarios;
     }
 
     // equals e hashCode
