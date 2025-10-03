@@ -384,4 +384,40 @@ public class TarefaService {
             throw new RuntimeException("Erro ao converter tarefa para DTO: " + e.getMessage(), e);
         }
     }
+
+    public Optional<DetalheTarefa> detalharTarefa(Long id) {
+        // 1. Busca a Entidade Tarefa principal
+        return tarefaRepository.findById(id)
+                .map(tarefa -> {
+                    // 2. Busca todos os anexos relacionados (dados do Gabriel)
+                    List<BuscaAnexo> anexosDTO = anexoRepository.findByTarefaId(tarefa.getId()).stream()
+                            .map(anexo -> new BuscaAnexo(
+                                    anexo.getId(),
+                                    anexo.getLink(),
+                                    anexo.getDescricao(),
+                                    anexo.getTarefa().getId()
+                            )).toList();
+
+                    // 3. Converte e integra os dados no DetalheTarefaDTO
+                    return new DetalheTarefa(
+                            tarefa.getId(),
+                            tarefa.getAgente() != null ? tarefa.getAgente().getId() : null,
+                            tarefa.getEmpresa() != null ? tarefa.getEmpresa().getId() : null,
+                            tarefa.getTitulo(),
+                            tarefa.getDescricao(),
+                            tarefa.getStatus(),
+                            tarefa.getPrioridade(),
+                            tarefa.getPosicao(),
+                            tarefa.getDtCriacao(),
+                            tarefa.getDtEntrega(),
+                            tarefa.getDtConclusao(),
+                            tarefa.getTags(),
+                            anexosDTO, // LISTA DE ANEXOS
+                            List.of(), // Placeholder Checklist
+                            List.of(), // Placeholder Comentários
+                            null,
+                            tarefa.getObservacoes()
+                    );
+                });
+    }
 }

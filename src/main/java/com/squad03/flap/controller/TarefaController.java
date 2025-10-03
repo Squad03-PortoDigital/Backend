@@ -46,15 +46,12 @@ public class TarefaController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Buscar tarefa por ID", description = "Retorna uma tarefa específica baseada no ID fornecido")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Tarefa encontrada"),
-            @ApiResponse(responseCode = "404", description = "Tarefa não encontrada")
-    })
-    public ResponseEntity<BuscaTarefa> getTarefaById(
+    @Operation(summary = "Detalhar tarefa com dados completos", description = "Retorna uma tarefa específica com todos os dados complexos (anexos, checklist, etc.)")
+    public ResponseEntity<DetalheTarefa> getTarefaById(
             @Parameter(description = "ID da tarefa") @PathVariable Long id) {
         try {
-            return tarefaService.getTarefaById(id)
+            // Chama o novo método de detalhamento
+            return tarefaService.detalharTarefa(id)
                     .map(ResponseEntity::ok)
                     .orElse(ResponseEntity.notFound().build());
         } catch (Exception e) {
