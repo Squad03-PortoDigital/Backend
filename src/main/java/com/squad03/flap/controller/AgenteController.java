@@ -2,6 +2,7 @@ package com.squad03.flap.controller;
 
 import com.squad03.flap.DTO.CadastroAgente;
 import com.squad03.flap.DTO.BuscaAgente;
+import com.squad03.flap.DTO.AtualizacaoAgente;
 import com.squad03.flap.service.AgenteService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +37,12 @@ public class AgenteController {
     public ResponseEntity<BuscaAgente> buscarAgentePorId(@PathVariable int id) {
         Optional<BuscaAgente> agente = agenteService.buscarPorId(id);
         return agente.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<BuscaAgente> atualizarAgente(@PathVariable int id, @RequestBody AtualizacaoAgente dados) {
+        BuscaAgente agenteAtualizado = agenteService.atualizarAgente(id, dados);
+        return ResponseEntity.ok(agenteAtualizado);
     }
 
     @DeleteMapping("/{id}")

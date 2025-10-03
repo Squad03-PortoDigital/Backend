@@ -3,18 +3,17 @@ package com.squad03.flap.controller;
 import com.squad03.flap.DTO.AtualizacaoEmpresa;
 import com.squad03.flap.DTO.CadastroEmpresa;
 import com.squad03.flap.DTO.BuscaEmpresa;
-import com.squad03.flap.model.Empresa;
 import com.squad03.flap.service.EmpresaService;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/empresas")
-@Tag(name = "Empresas", description = "Gerenciamento de empresas")
 public class EmpresaController {
 
     private EmpresaService empresaService;
@@ -25,30 +24,31 @@ public class EmpresaController {
     }
 
     @PostMapping
-    @Transactional
-    public void createEmpresa(@RequestBody CadastroEmpresa dados) {
-        empresaService.cadastrarEmpresa(dados);
+    public ResponseEntity<BuscaEmpresa> createEmpresa(@RequestBody CadastroEmpresa dados) {
+        BuscaEmpresa empresaSalva = empresaService.cadastrarEmpresa(dados);
+        return new ResponseEntity<>(empresaSalva, HttpStatus.CREATED);
     }
 
     @GetMapping
-    public List<BuscaEmpresa> findAll() {
-        return empresaService.buscarEmpresas();
+    public ResponseEntity<List<BuscaEmpresa>> findAll() {
+        List<BuscaEmpresa> empresas = empresaService.buscarEmpresas();
+        return ResponseEntity.ok(empresas);
     }
 
     @GetMapping("/{id}")
-    public Empresa findById(@RequestParam int id) {
-        return empresaService.buscarEmpresaPorId(id);
+    public ResponseEntity<BuscaEmpresa> findById(@PathVariable int id) {
+        Optional<BuscaEmpresa> empresa = empresaService.buscarEmpresaPorId(id);
+        return empresa.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{id}")
-    @Transactional
-    public void updateEmpresa(@PathVariable int id, @RequestBody AtualizacaoEmpresa dados) {
-        empresaService.AtualizarEmpresa(id, dados);
-    }
+    public ResponseEntity<BuscaEmpresa> updateEmpresa(@PathVariable int id, @RequestBody AtualizacaoEmpresa dados) {
+        BuscaEmpresa empresa = empresaService.AtualizarEmpresa(id, dados);
+        return ResponseEntity.ok(empresa);    }
 
     @DeleteMapping
-    @Transactional
-    public void deleteEmpresa(@PathVariable int id) {
+    public ResponseEntity<Void> deleteEmpresa(@PathVariable int id) {
         empresaService.excluirEmpresa(id);
+        return ResponseEntity.noContent().build();
     }
 }

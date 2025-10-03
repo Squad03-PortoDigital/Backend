@@ -1,10 +1,22 @@
 package com.squad03.flap.model;
 
-import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "tarefa")
 public class Tarefa {
 
@@ -12,93 +24,108 @@ public class Tarefa {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String titulo;
-
-    @ManyToOne
-    @JoinColumn(name = "agente_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "agente_id", nullable = false)
     private Agente agente;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "empresa_id", nullable = false)
+    private Empresa empresa;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "lista_id", nullable = false)
+    private Lista lista;
 
     @OneToMany(mappedBy = "tarefa", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Anexo> anexos = new HashSet<>();
 
-    @ManyToOne
-    @JoinColumn(name = "empresa_id")
-    private Empresa empresa;
+    @Column(nullable = false, length = 100)
+    private String titulo;
 
-    @ManyToOne
-    @JoinColumn(name = "lista_id")
-    private Lista lista;
+    @Column(columnDefinition = "TEXT")
+    private String descricao;
 
-    @OneToMany(mappedBy = "tarefa", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Comentario> comentarios = new HashSet<>();
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private StatusTarefa status;
 
-    @OneToMany(mappedBy = "tarefa", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Membro> membros = new HashSet<>();
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private PrioridadeTarefa prioridade;
 
-    public Tarefa() {}
+    @Column(nullable = false)
+    private Integer posicao;
 
-    public Long getId() {
-        return id;
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime dtCriacao;
+
+    private LocalDateTime dtEntrega;
+
+    private LocalDateTime dtConclusao;
+
+    @ElementCollection
+    @CollectionTable(name = "tarefa_tags", joinColumns = @JoinColumn(name = "tarefa_id"))
+    @Column(name = "tag")
+    private List<String> tags;
+
+    @Column(length = 500)
+    private String observacoes;
+
+    @PrePersist
+    protected void onCreate() {
+        if (dtCriacao == null) {
+            dtCriacao = LocalDateTime.now();
+        }
+        if (posicao == null) {
+            posicao = 0;
+        }
+        if (status == null) {
+            status = StatusTarefa.A_FAZER;
+        }
+        if (prioridade == null) {
+            prioridade = PrioridadeTarefa.MEDIA;
+        }
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    @PreUpdate
+    protected void onUpdate() {
+        if (status == StatusTarefa.CONCLUIDA && dtConclusao == null) {
+            dtConclusao = LocalDateTime.now();
+        }
     }
 
-    public String getTitulo() {
-        return titulo;
+    public enum StatusTarefa {
+        A_FAZER("A Fazer"),
+        EM_PROGRESSO("Em Progresso"),
+        EM_REVISAO("Em Revisão"),
+        CONCLUIDA("Concluída"),
+        CANCELADA("Cancelada");
+
+        private final String descricao;
+
+        StatusTarefa(String descricao) {
+            this.descricao = descricao;
+        }
+
+        public String getDescricao() {
+            return descricao;
+        }
     }
 
-    public void setTitulo(String titulo) {
-        this.titulo = titulo;
-    }
+    public enum PrioridadeTarefa {
+        BAIXA("Baixa"),
+        MEDIA("Média"),
+        ALTA("Alta"),
+        CRITICA("Crítica");
 
-    public Agente getAgente() {
-        return agente;
-    }
+        private final String descricao;
 
-    public void setAgente(Agente agente) {
-        this.agente = agente;
-    }
+        PrioridadeTarefa(String descricao) {
+            this.descricao = descricao;
+        }
 
-    public Set<Anexo> getAnexos() {
-        return anexos;
+        public String getDescricao() {
+            return descricao;
+        }
     }
-
-    public void setAnexos(Set<Anexo> anexos) {
-        this.anexos = anexos;
-    }
-
-    public Empresa getEmpresa() {
-        return empresa;
-    }
-
-    public void setEmpresa(Empresa empresa) {
-        this.empresa = empresa;
-    }
-
-    public Lista getLista() {
-        return lista;
-    }
-
-    public void setLista(Lista lista) {
-        this.lista = lista;
-    }
-
-    public Set<Comentario> getComentarios() {
-        return comentarios;
-    }
-
-    public void setComentarios(Set<Comentario> comentarios) {
-        this.comentarios = comentarios;
-    }
-
-    public Set<Membro> getMembros() {
-        return membros;
-    }
-
-    public void setMembros(Set<Membro> membros) {
-        this.membros = membros;
-    }
-
 }

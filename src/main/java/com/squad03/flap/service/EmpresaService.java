@@ -5,10 +5,12 @@ import com.squad03.flap.DTO.CadastroEmpresa;
 import com.squad03.flap.DTO.BuscaEmpresa;
 import com.squad03.flap.model.Empresa;
 import com.squad03.flap.repository.EmpresaRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,27 +23,34 @@ public class EmpresaService {
         this.empresaRepository = empresaRepository;
     }
 
-    public void cadastrarEmpresa(CadastroEmpresa cadastroEmpresa) {
-        empresaRepository.save(new Empresa(cadastroEmpresa));
+    @Transactional
+    public BuscaEmpresa cadastrarEmpresa(CadastroEmpresa cadastroEmpresa) {
+        Empresa novaEmpresa = new Empresa(cadastroEmpresa);
+        Empresa empresaSalva = empresaRepository.save(novaEmpresa);
+        return new BuscaEmpresa(empresaSalva);
     }
 
-    public Empresa buscarEmpresaPorId(int id) {
-        return empresaRepository.findById(id).get();
+    public Optional<BuscaEmpresa> buscarEmpresaPorId(int id) {
+        return empresaRepository.findById(id).map(BuscaEmpresa::new);
     }
 
     public List<BuscaEmpresa> buscarEmpresas() {
         return empresaRepository.findAll().stream().map(BuscaEmpresa::new).collect(Collectors.toList());
     }
 
-    public void AtualizarEmpresa(int id, AtualizacaoEmpresa atualizacaoEmpresa) {
+    @Transactional
+    public BuscaEmpresa AtualizarEmpresa(int id, AtualizacaoEmpresa atualizacaoEmpresa) {
         Empresa empresa = empresaRepository.findById(id).get();
 
         empresa.setNome(atualizacaoEmpresa.nome());
         empresa.setFoto(atualizacaoEmpresa.foto());
 
-        empresaRepository.save(empresa);
+        Empresa empresaAtualizada = empresaRepository.save(empresa);
+
+        return new BuscaEmpresa(empresaAtualizada);
     }
 
+    @Transactional
     public void excluirEmpresa(int id) {
         empresaRepository.deleteById(id);
     }
