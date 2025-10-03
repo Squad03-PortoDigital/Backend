@@ -4,6 +4,7 @@ import com.squad03.flap.DTO.AtualizacaoMovimentacao;
 import com.squad03.flap.DTO.BuscaMovimentacao;
 import com.squad03.flap.DTO.CadastroMovimentacao;
 import com.squad03.flap.service.MovimentacaoService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,6 +16,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/movimentacoes")
+@Tag(name = "Movimentacoes", description = "Gerenciamento das movimentacoes")
 public class MovimentacaoController {
     private MovimentacaoService movimentacaoService;
 
