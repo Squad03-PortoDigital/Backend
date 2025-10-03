@@ -22,7 +22,7 @@ public class Usuario {
     private Role role;
 
     @Lob
-    @Column(name = "foto", columnDefinition = "LONGTEXT")
+    @Column(name = "foto", columnDefinition = "TEXT")
     private String foto; // Base64
 
     @Column(name = "nome", nullable = false, length = 100)
