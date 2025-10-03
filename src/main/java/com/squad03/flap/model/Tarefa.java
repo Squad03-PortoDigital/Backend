@@ -39,6 +39,13 @@ public class Tarefa {
     @OneToMany(mappedBy = "tarefa", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Anexo> anexos = new HashSet<>();
 
+    @OneToMany(mappedBy = "tarefa", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Comentario> comentarios = new HashSet<>();
+
+    @OneToMany(mappedBy = "tarefa", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Membro> membros = new HashSet<>();
+
+
     @Column(nullable = false, length = 100)
     private String titulo;
 
@@ -128,4 +135,5 @@ public class Tarefa {
             return descricao;
         }
     }
+
 }
