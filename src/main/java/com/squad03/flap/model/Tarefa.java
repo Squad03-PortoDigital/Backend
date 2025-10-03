@@ -29,9 +29,11 @@ public class Tarefa {
     @JoinColumn(name = "lista_id")
     private Lista lista;
 
-    // Relacionamento One-to-Many com Comentario
     @OneToMany(mappedBy = "tarefa", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Comentario> comentarios = new HashSet<>();
+
+    @OneToMany(mappedBy = "tarefa", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Membro> membros = new HashSet<>();
 
     public Tarefa() {}
 
@@ -90,4 +92,13 @@ public class Tarefa {
     public void setComentarios(Set<Comentario> comentarios) {
         this.comentarios = comentarios;
     }
+
+    public Set<Membro> getMembros() {
+        return membros;
+    }
+
+    public void setMembros(Set<Membro> membros) {
+        this.membros = membros;
+    }
+
 }

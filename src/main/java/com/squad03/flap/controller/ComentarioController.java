@@ -3,6 +3,7 @@ package com.squad03.flap.controller;
 import com.squad03.flap.DTO.ComentarioRequestDTO;
 import com.squad03.flap.DTO.ComentarioResponseDTO;
 import com.squad03.flap.service.ComentarioService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -12,8 +13,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/comentarios")
+@RequestMapping("/comentarios")
 @CrossOrigin(origins = "*")
+@Tag(name = "Comentarios", description = "Gerenciamento de comentarios")
 public class ComentarioController {
 
     @Autowired
