@@ -21,6 +21,12 @@ public class Lista {
     @OneToMany(mappedBy = "lista")
     private List<Tarefa> tarefa;
 
+    @OneToMany(mappedBy = "listaOrigem")
+    private List<Movimentacao> movimentacaoOrigem;
+
+    @OneToMany(mappedBy = "listaDestino")
+    private List<Movimentacao> movimentacaoDestino;
+
     public Lista() {
     }
 
