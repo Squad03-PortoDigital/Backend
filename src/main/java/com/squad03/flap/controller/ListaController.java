@@ -4,7 +4,6 @@ import com.squad03.flap.DTO.AtualizacaoLista;
 import com.squad03.flap.DTO.BuscaLista;
 import com.squad03.flap.DTO.CadastroLista;
 import com.squad03.flap.service.ListaService;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +16,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/listas")
-@Tag(name = "Listas", description = "Gerenciamento de listas")
 public class ListaController {
     
     private ListaService listaService;

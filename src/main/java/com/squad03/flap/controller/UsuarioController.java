@@ -6,7 +6,6 @@ import com.squad03.flap.DTO.UsuarioResponseDTO;
 import com.squad03.flap.DTO.LoginDTO;
 import com.squad03.flap.DTO.FotoDTO;
 import com.squad03.flap.service.UsuarioService;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,9 +16,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/usuarios")
+@RequestMapping("/api/usuarios")
 @CrossOrigin(origins = "*")
-@Tag(name = "Usuários", description = "Gerenciamento de usuários")
 public class UsuarioController {
 
     @Autowired
