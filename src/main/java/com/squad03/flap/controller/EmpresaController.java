@@ -4,6 +4,7 @@ import com.squad03.flap.DTO.AtualizacaoEmpresa;
 import com.squad03.flap.DTO.CadastroEmpresa;
 import com.squad03.flap.DTO.BuscaEmpresa;
 import com.squad03.flap.service.EmpresaService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/empresas")
+@Tag(name = "Empresas", description = "Gerenciamento de empresas")
 public class EmpresaController {
 
     private EmpresaService empresaService;

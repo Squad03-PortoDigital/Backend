@@ -4,6 +4,7 @@ import com.squad03.flap.DTO.CadastroAgente;
 import com.squad03.flap.DTO.BuscaAgente;
 import com.squad03.flap.DTO.AtualizacaoAgente;
 import com.squad03.flap.service.AgenteService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/agente")
+@Tag(name = "Agentes", description = "Gerenciamento dos agentes")
 public class AgenteController {
 
     @Autowired
