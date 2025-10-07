@@ -1,12 +1,10 @@
 package com.squad03.flap.service;
 
 import com.squad03.flap.model.Usuario;
-import com.squad03.flap.model.Role;
-import com.squad03.flap.model.Cargo;
-import com.squad03.flap.repository.UsuarioRepository;
-import com.squad03.flap.repository.RoleRepository;
 import com.squad03.flap.repository.CargoRepository;
+import com.squad03.flap.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,30 +20,33 @@ public class UsuarioService {
     private UsuarioRepository usuarioRepository;
 
     @Autowired
-    private RoleRepository roleRepository;
-
-    @Autowired
     private CargoRepository cargoRepository;
 
-    // Regex para validação de email
+    @Autowired
+    private PasswordEncoder passwordEncoder; // 🔐 Para codificar senhas
+
+    // Regex para validação de e-mail
     private static final Pattern EMAIL_PATTERN = Pattern.compile(
             "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$"
     );
 
-    // Salvar novo usuário
+    // Criar novo usuário
     public Usuario salvar(Usuario usuario) {
         validarUsuario(usuario);
 
         if (usuarioRepository.existsByEmail(usuario.getEmail())) {
-            throw new IllegalArgumentException("Já existe um usuário com este email");
+            throw new IllegalArgumentException("Já existe um usuário com este e-mail");
         }
 
-        validarRoleECargo(usuario);
+        validarCargo(usuario);
+
+        // 🔐 Codifica a senha antes de salvar
+        usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
 
         return usuarioRepository.save(usuario);
     }
 
-    // Atualizar usuário
+    // Atualizar usuário existente
     public Usuario atualizar(Usuario usuario) {
         if (usuario.getId() == null) {
             throw new IllegalArgumentException("ID do usuário não pode ser nulo");
@@ -57,13 +58,17 @@ public class UsuarioService {
 
         validarUsuario(usuario);
 
-        // Verificar se já existe outro usuário com o mesmo email
         Optional<Usuario> usuarioExistente = usuarioRepository.findByEmail(usuario.getEmail());
         if (usuarioExistente.isPresent() && !usuarioExistente.get().getId().equals(usuario.getId())) {
-            throw new IllegalArgumentException("Já existe um usuário com este email");
+            throw new IllegalArgumentException("Já existe um usuário com este e-mail");
         }
 
-        validarRoleECargo(usuario);
+        validarCargo(usuario);
+
+        // 🔐 Se a senha foi alterada, reencoda
+        if (!usuario.getSenha().startsWith("$2a$")) { // evita reencodar senha já criptografada
+            usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
+        }
 
         return usuarioRepository.save(usuario);
     }
@@ -74,34 +79,16 @@ public class UsuarioService {
         return usuarioRepository.findAllByOrderByNomeAsc();
     }
 
-    // Buscar todos com role e cargo carregados
-    @Transactional(readOnly = true)
-    public List<Usuario> buscarTodosComRoleECargo() {
-        return usuarioRepository.findAllWithRoleAndCargo();
-    }
-
     // Buscar usuário por ID
     @Transactional(readOnly = true)
     public Optional<Usuario> buscarPorId(Long id) {
         return usuarioRepository.findById(id);
     }
 
-    // Buscar usuário por ID com role e cargo
-    @Transactional(readOnly = true)
-    public Optional<Usuario> buscarPorIdComRoleECargo(Long id) {
-        return usuarioRepository.findByIdWithRoleAndCargo(id);
-    }
-
-    // Buscar usuário por email
+    // Buscar usuário por e-mail
     @Transactional(readOnly = true)
     public Optional<Usuario> buscarPorEmail(String email) {
         return usuarioRepository.findByEmail(email);
-    }
-
-    // Buscar usuário por email com role e cargo
-    @Transactional(readOnly = true)
-    public Optional<Usuario> buscarPorEmailComRoleECargo(String email) {
-        return usuarioRepository.findByEmailWithRoleAndCargo(email);
     }
 
     // Buscar usuários por nome
@@ -110,22 +97,10 @@ public class UsuarioService {
         return usuarioRepository.findByNomeContainingIgnoreCase(nome);
     }
 
-    // Buscar usuários por role
-    @Transactional(readOnly = true)
-    public List<Usuario> buscarPorRole(Long roleId) {
-        return usuarioRepository.findByRoleId(roleId);
-    }
-
-    // Buscar usuários por cargo
+    // Buscar usuários por cargo (ID)
     @Transactional(readOnly = true)
     public List<Usuario> buscarPorCargo(Long cargoId) {
         return usuarioRepository.findByCargoId(cargoId);
-    }
-
-    // Buscar usuários por nome da role
-    @Transactional(readOnly = true)
-    public List<Usuario> buscarPorNomeRole(String nomeRole) {
-        return usuarioRepository.findByRoleNome(nomeRole);
     }
 
     // Buscar usuários por nome do cargo
@@ -154,36 +129,35 @@ public class UsuarioService {
         usuarioRepository.deleteById(id);
     }
 
-    // Verificar se existe
+    // Verificar existência
     @Transactional(readOnly = true)
     public boolean existe(Long id) {
         return usuarioRepository.existsById(id);
     }
 
-    // Atualizar foto do usuário
+    // Atualizar foto
     public Usuario atualizarFoto(Long id, String fotoBase64) {
-        Optional<Usuario> usuarioOpt = usuarioRepository.findById(id);
-        if (!usuarioOpt.isPresent()) {
-            throw new IllegalArgumentException("Usuário não encontrado");
-        }
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
 
-        Usuario usuario = usuarioOpt.get();
         usuario.setFoto(fotoBase64);
         return usuarioRepository.save(usuario);
     }
 
-    // Métodos privados de validação
+    // ======================
+    // MÉTODOS DE VALIDAÇÃO
+    // ======================
     private void validarUsuario(Usuario usuario) {
         if (usuario.getNome() == null || usuario.getNome().trim().isEmpty()) {
             throw new IllegalArgumentException("Nome não pode ser vazio");
         }
 
         if (usuario.getEmail() == null || usuario.getEmail().trim().isEmpty()) {
-            throw new IllegalArgumentException("Email não pode ser vazio");
+            throw new IllegalArgumentException("E-mail não pode ser vazio");
         }
 
         if (!EMAIL_PATTERN.matcher(usuario.getEmail()).matches()) {
-            throw new IllegalArgumentException("Email inválido");
+            throw new IllegalArgumentException("E-mail inválido");
         }
 
         if (usuario.getSenha() == null || usuario.getSenha().trim().isEmpty()) {
@@ -195,17 +169,9 @@ public class UsuarioService {
         }
     }
 
-    private void validarRoleECargo(Usuario usuario) {
-        if (usuario.getRole() == null || usuario.getRole().getId() == null) {
-            throw new IllegalArgumentException("Role é obrigatória");
-        }
-
+    private void validarCargo(Usuario usuario) {
         if (usuario.getCargo() == null || usuario.getCargo().getId() == null) {
             throw new IllegalArgumentException("Cargo é obrigatório");
-        }
-
-        if (!roleRepository.existsById(usuario.getRole().getId())) {
-            throw new IllegalArgumentException("Role não encontrada");
         }
 
         if (!cargoRepository.existsById(usuario.getCargo().getId())) {

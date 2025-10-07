@@ -54,19 +54,7 @@ public class UsuarioController {
         }
     }
 
-    // Buscar todos com role e cargo
-    @GetMapping("/completo")
-    public ResponseEntity<List<UsuarioResponseDTO>> buscarTodosCompleto() {
-        try {
-            List<Usuario> usuarios = usuarioService.buscarTodosComRoleECargo();
-            List<UsuarioResponseDTO> usuariosDTO = usuarios.stream()
-                    .map(UsuarioResponseDTO::new)
-                    .collect(Collectors.toList());
-            return ResponseEntity.ok(usuariosDTO);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
+
 
     // Buscar usuário por ID
     @GetMapping("/{id}")
@@ -84,21 +72,6 @@ public class UsuarioController {
         }
     }
 
-    // Buscar usuário por ID completo
-    @GetMapping("/{id}/completo")
-    public ResponseEntity<?> buscarPorIdCompleto(@PathVariable Long id) {
-        try {
-            Optional<Usuario> usuario = usuarioService.buscarPorIdComRoleECargo(id);
-            if (usuario.isPresent()) {
-                return ResponseEntity.ok(new UsuarioResponseDTO(usuario.get()));
-            } else {
-                return ResponseEntity.notFound().build();
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Erro interno do servidor: " + e.getMessage());
-        }
-    }
 
     // Atualizar usuário
     @PutMapping("/{id}")
@@ -160,19 +133,7 @@ public class UsuarioController {
         }
     }
 
-    // Buscar usuários por role
-    @GetMapping("/role/{roleId}")
-    public ResponseEntity<List<UsuarioResponseDTO>> buscarPorRole(@PathVariable Long roleId) {
-        try {
-            List<Usuario> usuarios = usuarioService.buscarPorRole(roleId);
-            List<UsuarioResponseDTO> usuariosDTO = usuarios.stream()
-                    .map(UsuarioResponseDTO::new)
-                    .collect(Collectors.toList());
-            return ResponseEntity.ok(usuariosDTO);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
+
 
     // Buscar usuários por cargo
     @GetMapping("/cargo/{cargoId}")
@@ -188,19 +149,6 @@ public class UsuarioController {
         }
     }
 
-    // Buscar usuários por nome da role
-    @GetMapping("/role/nome/{nomeRole}")
-    public ResponseEntity<List<UsuarioResponseDTO>> buscarPorNomeRole(@PathVariable String nomeRole) {
-        try {
-            List<Usuario> usuarios = usuarioService.buscarPorNomeRole(nomeRole);
-            List<UsuarioResponseDTO> usuariosDTO = usuarios.stream()
-                    .map(UsuarioResponseDTO::new)
-                    .collect(Collectors.toList());
-            return ResponseEntity.ok(usuariosDTO);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
 
     // Buscar usuários por nome do cargo
     @GetMapping("/cargo/nome/{nomeCargo}")
@@ -216,33 +164,7 @@ public class UsuarioController {
         }
     }
 
-    // Buscar usuários com foto
-    @GetMapping("/com-foto")
-    public ResponseEntity<List<UsuarioResponseDTO>> buscarComFoto() {
-        try {
-            List<Usuario> usuarios = usuarioService.buscarUsuariosComFoto();
-            List<UsuarioResponseDTO> usuariosDTO = usuarios.stream()
-                    .map(UsuarioResponseDTO::new)
-                    .collect(Collectors.toList());
-            return ResponseEntity.ok(usuariosDTO);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
 
-    // Buscar usuários sem foto
-    @GetMapping("/sem-foto")
-    public ResponseEntity<List<UsuarioResponseDTO>> buscarSemFoto() {
-        try {
-            List<Usuario> usuarios = usuarioService.buscarUsuariosSemFoto();
-            List<UsuarioResponseDTO> usuariosDTO = usuarios.stream()
-                    .map(UsuarioResponseDTO::new)
-                    .collect(Collectors.toList());
-            return ResponseEntity.ok(usuariosDTO);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
 
     // Atualizar foto
     @PutMapping("/{id}/foto")
@@ -258,21 +180,5 @@ public class UsuarioController {
         }
     }
 
-    // Login básico
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginDTO loginDTO) {
-        try {
-            Optional<Usuario> usuario = usuarioService.buscarPorEmailComRoleECargo(loginDTO.getEmail());
 
-            if (usuario.isPresent() && usuario.get().getSenha().equals(loginDTO.getSenha())) {
-                return ResponseEntity.ok(new UsuarioResponseDTO(usuario.get()));
-            } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body("Email ou senha inválidos");
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Erro interno do servidor: " + e.getMessage());
-        }
-    }
 }

@@ -13,13 +13,11 @@ public class Usuario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "cargo_id", nullable = false)
     private Cargo cargo;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "role_id", nullable = false)
-    private Role role;
+
 
     @Lob
     @Column(name = "foto", columnDefinition = "TEXT")
@@ -34,6 +32,9 @@ public class Usuario {
     @Column(name = "senha", nullable = false, length = 255)
     private String senha;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false)
+    private Role role = Role.COMUM;
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Comentario> comentarios = new HashSet<>();
 
@@ -41,15 +42,20 @@ public class Usuario {
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Membro> membros = new HashSet<>();
 
+    public enum Role {
+        ADMIN,
+        COMUM
+    }
+
     public Usuario() {}
 
-    public Usuario(Cargo cargo, Role role, String foto, String nome, String email, String senha) {
+    public Usuario(Cargo cargo, String foto, String nome, String email, String senha, Role role) {
         this.cargo = cargo;
-        this.role = role;
         this.foto = foto;
         this.nome = nome;
         this.email = email;
         this.senha = senha;
+        this.role = role;
     }
 
     public Long getId() {
@@ -66,14 +72,6 @@ public class Usuario {
 
     public void setCargo(Cargo cargo) {
         this.cargo = cargo;
-    }
-
-    public Role getRole() {
-        return role;
-    }
-
-    public void setRole(Role role) {
-        this.role = role;
     }
 
     public String getFoto() {
@@ -120,6 +118,13 @@ public class Usuario {
     public Set<Membro> getMembros() {
         return membros;
     }
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
 
     public void setMembros(Set<Membro> membros) {
         this.membros = membros;
@@ -144,6 +149,7 @@ public class Usuario {
                 "id=" + id +
                 ", nome='" + nome + '\'' +
                 ", email='" + email + '\'' +
+                ", role="+ role +
                 '}';
     }
 }
