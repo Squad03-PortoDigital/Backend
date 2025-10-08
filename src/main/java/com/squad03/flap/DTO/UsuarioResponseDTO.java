@@ -9,8 +9,8 @@ public class UsuarioResponseDTO {
     private String nome;
     private String email;
     private String foto;
-    private RoleDTO role;
     private CargoDTO cargo;
+    private String role;  // <- adicionado
 
     // Construtores
     public UsuarioResponseDTO() {}
@@ -22,10 +22,7 @@ public class UsuarioResponseDTO {
             this.nome = usuario.getNome();
             this.email = usuario.getEmail();
             this.foto = usuario.getFoto();
-
-            if (usuario.getRole() != null) {
-                this.role = new RoleDTO(usuario.getRole());
-            }
+            this.role = usuario.getRole() != null ? usuario.getRole().name() : null; // <- populate role
 
             if (usuario.getCargo() != null) {
                 this.cargo = new CargoDTO(usuario.getCargo());
@@ -34,53 +31,23 @@ public class UsuarioResponseDTO {
     }
 
     // Getters e Setters
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public String getNome() { return nome; }
+    public void setNome(String nome) { this.nome = nome; }
 
-    public String getNome() {
-        return nome;
-    }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
+    public String getFoto() { return foto; }
+    public void setFoto(String foto) { this.foto = foto; }
 
-    public String getEmail() {
-        return email;
-    }
+    public CargoDTO getCargo() { return cargo; }
+    public void setCargo(CargoDTO cargo) { this.cargo = cargo; }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getFoto() {
-        return foto;
-    }
-
-    public void setFoto(String foto) {
-        this.foto = foto;
-    }
-
-    public RoleDTO getRole() {
-        return role;
-    }
-
-    public void setRole(RoleDTO role) {
-        this.role = role;
-    }
-
-    public CargoDTO getCargo() {
-        return cargo;
-    }
-
-    public void setCargo(CargoDTO cargo) {
-        this.cargo = cargo;
-    }
+    public String getRole() { return role; }  // <- getter role
+    public void setRole(String role) { this.role = role; }  // <- setter role
 
     // equals e hashCode
     @Override
@@ -92,9 +59,7 @@ public class UsuarioResponseDTO {
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(id);
-    }
+    public int hashCode() { return Objects.hash(id); }
 
     // toString
     @Override
@@ -103,8 +68,8 @@ public class UsuarioResponseDTO {
                 "id=" + id +
                 ", nome='" + nome + '\'' +
                 ", email='" + email + '\'' +
-                ", role=" + role +
                 ", cargo=" + cargo +
+                ", role=" + role +  // <- incluir role
                 '}';
     }
 }

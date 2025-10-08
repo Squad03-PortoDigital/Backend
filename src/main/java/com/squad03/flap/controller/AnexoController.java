@@ -2,6 +2,7 @@ package com.squad03.flap.controller;
 
 import com.squad03.flap.DTO.*;
 import com.squad03.flap.service.AnexoService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +13,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/anexos")
+@Tag(name = "Anexos", description = "Gerenciamento dos anexos")
 public class AnexoController {
 
     @Autowired
