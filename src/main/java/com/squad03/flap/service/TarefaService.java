@@ -39,6 +39,9 @@ public class TarefaService {
     @Autowired
     private ChecklistRepository checklistRepository;
 
+    @Autowired
+    private ComentarioService comentarioService;
+
     /**
      * Cria uma nova tarefa, buscando as entidades relacionadas e validando os dados.
      * @param cadastroTarefa O DTO com os dados da tarefa a ser criada.
@@ -403,6 +406,8 @@ public class TarefaService {
                             .map(BuscaChecklist::new)
                             .toList();
 
+                    List<ComentarioResponseDTO> comentariosDTO = comentarioService.buscarPorTarefa(tarefa.getId());
+
                     return new DetalheTarefa(
                             tarefa.getId(),
                             tarefa.getAgente() != null ? tarefa.getAgente().getId() : null,
@@ -416,9 +421,9 @@ public class TarefaService {
                             tarefa.getDtEntrega(),
                             tarefa.getDtConclusao(),
                             tarefa.getTags(),
-                            anexosDTO, // LISTA DE ANEXOS
-                            checklistsDTO, // Placeholder Checklist
-                            List.of(), // Placeholder Comentários
+                            anexosDTO,
+                            checklistsDTO,
+                            comentariosDTO,
                             null,
                             tarefa.getObservacoes()
                     );
