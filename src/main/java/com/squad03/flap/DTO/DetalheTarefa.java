@@ -21,8 +21,8 @@ public record DetalheTarefa(
 
         List<String> tags,
         List<BuscaAnexo> anexos,
-        List<Object> checklist,
-        List<Object> comentarios,
+        List<BuscaChecklist> checklist,
+        List<ComentarioResponseDTO> comentarios,
         Object historico,
         String observacoes
 ) {}

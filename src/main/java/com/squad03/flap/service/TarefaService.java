@@ -36,6 +36,12 @@ public class TarefaService {
     @Autowired
     private ListaRepository listaRepository;
 
+    @Autowired
+    private ChecklistRepository checklistRepository;
+
+    @Autowired
+    private ComentarioService comentarioService;
+
     /**
      * Cria uma nova tarefa, buscando as entidades relacionadas e validando os dados.
      * @param cadastroTarefa O DTO com os dados da tarefa a ser criada.
@@ -386,10 +392,8 @@ public class TarefaService {
     }
 
     public Optional<DetalheTarefa> detalharTarefa(Long id) {
-        // 1. Busca a Entidade Tarefa principal
         return tarefaRepository.findById(id)
                 .map(tarefa -> {
-                    // 2. Busca todos os anexos relacionados (dados do Gabriel)
                     List<BuscaAnexo> anexosDTO = anexoRepository.findByTarefaId(tarefa.getId()).stream()
                             .map(anexo -> new BuscaAnexo(
                                     anexo.getId(),
@@ -398,7 +402,12 @@ public class TarefaService {
                                     anexo.getTarefa().getId()
                             )).toList();
 
-                    // 3. Converte e integra os dados no DetalheTarefaDTO
+                    List<BuscaChecklist> checklistsDTO = checklistRepository.findByTarefaId(tarefa.getId()).stream()
+                            .map(BuscaChecklist::new)
+                            .toList();
+
+                    List<ComentarioResponseDTO> comentariosDTO = comentarioService.buscarPorTarefa(tarefa.getId());
+
                     return new DetalheTarefa(
                             tarefa.getId(),
                             tarefa.getAgente() != null ? tarefa.getAgente().getId() : null,
@@ -412,9 +421,9 @@ public class TarefaService {
                             tarefa.getDtEntrega(),
                             tarefa.getDtConclusao(),
                             tarefa.getTags(),
-                            anexosDTO, // LISTA DE ANEXOS
-                            List.of(), // Placeholder Checklist
-                            List.of(), // Placeholder Comentários
+                            anexosDTO,
+                            checklistsDTO,
+                            comentariosDTO,
                             null,
                             tarefa.getObservacoes()
                     );

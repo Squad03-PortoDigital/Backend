@@ -1,7 +1,6 @@
 package com.squad03.flap.DTO;
 
 import com.squad03.flap.model.Usuario;
-import com.squad03.flap.model.Role;
 import com.squad03.flap.model.Cargo;
 import java.util.Objects;
 
@@ -9,7 +8,6 @@ public class UsuarioDTO {
 
     private Long id;
     private Long cargoId;
-    private Long roleId;
     private String foto;
     private String nome;
     private String email;
@@ -18,11 +16,10 @@ public class UsuarioDTO {
     // Construtores
     public UsuarioDTO() {}
 
-    public UsuarioDTO(String nome, String email, String senha, Long roleId, Long cargoId) {
+    public UsuarioDTO(String nome, String email, String senha,Long cargoId) {
         this.nome = nome;
         this.email = email;
         this.senha = senha;
-        this.roleId = roleId;
         this.cargoId = cargoId;
     }
 
@@ -35,9 +32,6 @@ public class UsuarioDTO {
             this.senha = usuario.getSenha();
             this.foto = usuario.getFoto();
 
-            if (usuario.getRole() != null) {
-                this.roleId = usuario.getRole().getId();
-            }
 
             if (usuario.getCargo() != null) {
                 this.cargoId = usuario.getCargo().getId();
@@ -54,11 +48,6 @@ public class UsuarioDTO {
         usuario.setSenha(this.senha);
         usuario.setFoto(this.foto);
 
-        if (this.roleId != null) {
-            Role role = new Role();
-            role.setId(this.roleId);
-            usuario.setRole(role);
-        }
 
         if (this.cargoId != null) {
             Cargo cargo = new Cargo();
@@ -86,13 +75,8 @@ public class UsuarioDTO {
         this.cargoId = cargoId;
     }
 
-    public Long getRoleId() {
-        return roleId;
-    }
 
-    public void setRoleId(Long roleId) {
-        this.roleId = roleId;
-    }
+
 
     public String getFoto() {
         return foto;
@@ -147,7 +131,6 @@ public class UsuarioDTO {
                 "id=" + id +
                 ", nome='" + nome + '\'' +
                 ", email='" + email + '\'' +
-                ", roleId=" + roleId +
                 ", cargoId=" + cargoId +
                 '}';
     }
