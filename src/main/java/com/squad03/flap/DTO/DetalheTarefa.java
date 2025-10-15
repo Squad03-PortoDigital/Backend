@@ -8,7 +8,6 @@ import java.util.List;
 
 public record DetalheTarefa(
         Long id,
-        int agenteId,
         int empresaId,
         String titulo,
         String descricao,

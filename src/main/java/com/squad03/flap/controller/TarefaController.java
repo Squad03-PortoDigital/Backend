@@ -2,10 +2,8 @@ package com.squad03.flap.controller;
 
 import com.squad03.flap.DTO.*;
 import com.squad03.flap.exception.TarefaValidacaoException;
-import com.squad03.flap.model.Agente;
 import com.squad03.flap.model.Tarefa.PrioridadeTarefa;
 import com.squad03.flap.model.Tarefa.StatusTarefa;
-import com.squad03.flap.service.AgenteService;
 import com.squad03.flap.service.TarefaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -30,8 +28,7 @@ public class TarefaController {
     @Autowired
     private TarefaService tarefaService;
 
-    @Autowired
-    private AgenteService agenteService;
+
 
     @GetMapping
     @Operation(summary = "Listar todas as tarefas", description = "Retorna uma lista com todas as tarefas cadastradas no sistema")
@@ -64,8 +61,8 @@ public class TarefaController {
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Tarefa criada com sucesso"),
             @ApiResponse(responseCode = "400", description = "Dados inválidos"),
-            @ApiResponse(responseCode = "404", description = "Agente, Empresa ou Lista não encontrada")
     })
+
     public ResponseEntity<?> criarTarefa(
             @Parameter(description = "Dados para criar a tarefa") @RequestBody CadastroTarefa cadastroTarefa) {
         try {
@@ -128,22 +125,6 @@ public class TarefaController {
                 return ResponseEntity.noContent().build();
             }
             return ResponseEntity.notFound().build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-    @GetMapping("/agente/{agenteId}")
-    @Operation(summary = "Listar tarefas por agente", description = "Retorna todas as tarefas de um agente específico")
-    public ResponseEntity<List<BuscaTarefa>> getTarefasPorAgente(
-            @Parameter(description = "ID do agente") @PathVariable int agenteId) {
-        try {
-            Agente agente = agenteService.buscarEntidadePorId(agenteId).orElse(null);
-            if (agente == null) {
-                return ResponseEntity.notFound().build();
-            }
-            List<BuscaTarefa> tarefas = tarefaService.getTarefasPorAgente(agente);
-            return ResponseEntity.ok(tarefas);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }

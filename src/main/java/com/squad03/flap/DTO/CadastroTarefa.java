@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public record CadastroTarefa(
-        int agenteId,
         int empresaId,
         Long listaId,
         String titulo,

@@ -25,10 +25,6 @@ public class Tarefa {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "agente_id", nullable = false)
-    private Agente agente;
-
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "empresa_id", nullable = false)
     private Empresa empresa;
 
@@ -47,7 +43,6 @@ public class Tarefa {
 
     @OneToMany(mappedBy = "tarefa", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Membro> membros = new HashSet<>();
-
 
     @Column(nullable = false, length = 100)
     private String titulo;

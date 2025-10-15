@@ -50,12 +50,6 @@ public class TarefaService {
     public BuscaTarefa criarTarefa(CadastroTarefa cadastroTarefa) {
         try {
             // Busca e valida as entidades relacionadas
-            Optional<Agente> agenteOptional = agenteRepository.findById(cadastroTarefa.agenteId());
-            if (agenteOptional.isEmpty()) {
-                throw new TarefaValidacaoException("Agente não encontrado com ID: " + cadastroTarefa.agenteId());
-            }
-            Agente agente = agenteOptional.get();
-
             Optional<Empresa> empresaOptional = empresaRepository.findById(cadastroTarefa.empresaId());
             if (empresaOptional.isEmpty()) {
                 throw new TarefaValidacaoException("Empresa não encontrada com ID: " + cadastroTarefa.empresaId());
@@ -68,15 +62,14 @@ public class TarefaService {
             }
             Lista lista = listaOptional.get();
 
-            Integer proximaPosicao = tarefaRepository.findMaxPosicaoByAgenteAndStatus(agente, StatusTarefa.A_FAZER);
-            if (proximaPosicao == null) {
-                proximaPosicao = 0;
-            } else {
-                proximaPosicao++;
-            }
+           //Integer proximaPosicao = tarefaRepository.findMaxPosicaoByAgenteAndStatus(agente, StatusTarefa.A_FAZER);
+            //if (proximaPosicao == null) {
+            //    proximaPosicao = 0;
+            //} else {
+            //    proximaPosicao++;
+            //}
 
             Tarefa novaTarefa = Tarefa.builder()
-                    .agente(agente)
                     .empresa(empresa)
                     .lista(lista)
                     .titulo(cadastroTarefa.titulo())
@@ -86,7 +79,7 @@ public class TarefaService {
                     .tags(cadastroTarefa.tags() != null ? cadastroTarefa.tags() : new ArrayList<>())
                     .observacoes(cadastroTarefa.observacoes())
                     .status(StatusTarefa.A_FAZER)
-                    .posicao(proximaPosicao)
+                    //.posicao(proximaPosicao)
                     .build();
 
             Tarefa tarefaSalva = tarefaRepository.save(novaTarefa);
@@ -209,15 +202,7 @@ public class TarefaService {
      * @param agente A entidade Agente.
      * @return Uma lista de DTOs de tarefas.
      */
-    public List<BuscaTarefa> getTarefasPorAgente(Agente agente) {
-        try {
-            return tarefaRepository.findByAgenteOrderByPosicaoAsc(agente).stream()
-                    .map(this::converterParaDTO)
-                    .toList();
-        } catch (Exception e) {
-            throw new RuntimeException("Erro ao buscar tarefas por agente: " + e.getMessage(), e);
-        }
-    }
+
 
     /**
      * Busca tarefas por status.
@@ -325,20 +310,6 @@ public class TarefaService {
     }
 
     /**
-     * Conta tarefas por agente e status.
-     * @param agente O agente.
-     * @param status O status.
-     * @return O número de tarefas.
-     */
-    public Long contarTarefasPorAgenteEStatus(Agente agente, StatusTarefa status) {
-        try {
-            return tarefaRepository.countByAgenteAndStatus(agente, status);
-        } catch (Exception e) {
-            throw new RuntimeException("Erro ao contar tarefas: " + e.getMessage(), e);
-        }
-    }
-
-    /**
      * Busca os anexos de uma tarefa específica.
      * @param tarefaId O ID da tarefa.
      * @return Uma lista de DTOs de Anexo.
@@ -372,7 +343,6 @@ public class TarefaService {
         try {
             return new BuscaTarefa(
                     tarefa.getId(),
-                    tarefa.getAgente() != null ? tarefa.getAgente().getId() : null,
                     tarefa.getEmpresa() != null ? tarefa.getEmpresa().getId() : null,
                     tarefa.getLista() != null ? tarefa.getLista().getId() : null, // <-- Adicionado ao retorno
                     tarefa.getTitulo(),
@@ -410,7 +380,6 @@ public class TarefaService {
 
                     return new DetalheTarefa(
                             tarefa.getId(),
-                            tarefa.getAgente() != null ? tarefa.getAgente().getId() : null,
                             tarefa.getEmpresa() != null ? tarefa.getEmpresa().getId() : null,
                             tarefa.getTitulo(),
                             tarefa.getDescricao(),
