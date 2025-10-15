@@ -3,6 +3,7 @@ package com.squad03.flap.model;
 import com.squad03.flap.DTO.CadastroLista;
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -18,7 +19,13 @@ public class Lista {
     private String cor;
 
     @OneToMany(mappedBy = "lista")
-    private List<Tarefa> tarefas;
+    private List<Tarefa> tarefa;
+
+    @OneToMany(mappedBy = "listaOrigem")
+    private List<Movimentacao> movimentacaoOrigem;
+
+    @OneToMany(mappedBy = "listaDestino")
+    private List<Movimentacao> movimentacaoDestino;
 
     public Lista() {
     }
@@ -64,14 +71,18 @@ public class Lista {
     }
 
     public List<Tarefa> getTarefa() {
-        return tarefas;
+        return tarefa;
     }
 
     @Override
     public final boolean equals(Object o) {
         if (!(o instanceof Lista lista)) return false;
 
-        return id == lista.id;
+        return id.equals(lista.id);
     }
 
+    @Override
+    public int hashCode() {
+        return id.hashCode();
+    }
 }

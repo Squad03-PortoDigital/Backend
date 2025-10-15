@@ -2,27 +2,35 @@ package com.squad03.flap.model;
 
 import com.squad03.flap.DTO.CadastroEmpresa;
 import jakarta.persistence.*;
-import java.util.ArrayList;
+
 import java.util.List;
-import java.util.Objects;
 
 @Entity
-@Table(name = "empresa")
+@Table(name = "Empresa")
 public class Empresa {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Long id;
 
     private String nome;
+
+    private String cnpj;
+
+    private String email;
+
+    private String contato;
+
+    private String atuacao;
+
+    private String observacao;
 
     private String foto;
 
     @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Tarefa> tarefas = new ArrayList<>();
+    private List<Tarefa> tarefa;
 
     public Empresa() {}
-
     public Empresa(String nome, String foto) {
         this.nome = nome;
         this.foto = foto;
@@ -30,10 +38,15 @@ public class Empresa {
 
     public Empresa(CadastroEmpresa cadastroEmpresa) {
         this.nome = cadastroEmpresa.nome();
+        this.cnpj = cadastroEmpresa.cnpj();
+        this.email = cadastroEmpresa.email();
+        this.contato = cadastroEmpresa.contato();
+        this.atuacao = cadastroEmpresa.atuacao();
+        this.observacao = cadastroEmpresa.observacao();
         this.foto = cadastroEmpresa.foto();
     }
 
-    public int getId() {
+    public Long getId() {
         return id;
     }
 
@@ -45,6 +58,46 @@ public class Empresa {
         this.nome = nome;
     }
 
+    public String getCnpj() {
+        return cnpj;
+    }
+
+    public void setCnpj(String cnpj) {
+        this.cnpj = cnpj;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getContato() {
+        return contato;
+    }
+
+    public void setContato(String contato) {
+        this.contato = contato;
+    }
+
+    public String getAtuacao() {
+        return atuacao;
+    }
+
+    public void setAtuacao(String atuacao) {
+        this.atuacao = atuacao;
+    }
+
+    public String getObservacao() {
+        return observacao;
+    }
+
+    public void setObservacao(String observacao) {
+        this.observacao = observacao;
+    }
+
     public String getFoto() {
         return foto;
     }
@@ -53,23 +106,19 @@ public class Empresa {
         this.foto = foto;
     }
 
-    public List<Tarefa> getTarefas() {
-        return tarefas;
-    }
-
-    public void setTarefas(List<Tarefa> tarefas) {
-        this.tarefas = tarefas;
+    public List<Tarefa> getTarefa() {
+        return tarefa;
     }
 
     @Override
     public final boolean equals(Object o) {
-        if (this == o) return true;
         if (!(o instanceof Empresa empresa)) return false;
-        return id == empresa.id;
+
+        return id.equals(empresa.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id);
+        return id.hashCode();
     }
 }
