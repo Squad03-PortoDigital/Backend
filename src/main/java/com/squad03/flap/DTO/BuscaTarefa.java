@@ -7,7 +7,7 @@ import java.util.List;
 
 public record BuscaTarefa(
         Long id,
-        int empresaId,
+        Long empresaId,
         Long listaId,
         String titulo,
         String descricao,

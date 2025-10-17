@@ -13,24 +13,23 @@ public class Empresa {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, length = 100)
     private String nome;
-
     private String cnpj;
-
     private String email;
-
     private String contato;
-
     private String atuacao;
-
     private String observacao;
-
     private String foto;
+
+    @Column(nullable = false, length = 250)
+    private String agenteLink;
 
     @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Tarefa> tarefa;
 
     public Empresa() {}
+
     public Empresa(String nome, String foto) {
         this.nome = nome;
         this.foto = foto;
@@ -44,6 +43,7 @@ public class Empresa {
         this.atuacao = cadastroEmpresa.atuacao();
         this.observacao = cadastroEmpresa.observacao();
         this.foto = cadastroEmpresa.foto();
+        this.agenteLink = cadastroEmpresa.agenteLink();
     }
 
     public Long getId() {
@@ -104,6 +104,14 @@ public class Empresa {
 
     public void setFoto(String foto) {
         this.foto = foto;
+    }
+
+    public String getAgenteLink() {
+        return agenteLink;
+    }
+
+    public void setAgenteLink(String agenteLink) {
+        this.agenteLink = agenteLink;
     }
 
     public List<Tarefa> getTarefa() {

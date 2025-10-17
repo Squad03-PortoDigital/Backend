@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 @Service
 public class EmpresaService {
 
+    @Autowired
     private EmpresaRepository empresaRepository;
 
     @Autowired
@@ -49,6 +50,7 @@ public class EmpresaService {
         empresa.setAtuacao(atualizacaoEmpresa.atuacao());
         empresa.setObservacao(atualizacaoEmpresa.observacao());
         empresa.setFoto(atualizacaoEmpresa.foto());
+        empresa.setAgenteLink(atualizacaoEmpresa.agenteLink());
 
         Empresa empresaAtualizada = empresaRepository.save(empresa);
 

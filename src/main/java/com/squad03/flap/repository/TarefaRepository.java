@@ -8,17 +8,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.squad03.flap.model.Agente;
 import com.squad03.flap.model.Tarefa;
 import com.squad03.flap.model.Tarefa.StatusTarefa;
 import com.squad03.flap.model.Tarefa.PrioridadeTarefa;
 
 @Repository
 public interface TarefaRepository extends JpaRepository<Tarefa, Long> {
-
-
-    
-
     
     List<Tarefa> findByStatus(StatusTarefa status);
     
@@ -30,7 +25,7 @@ public interface TarefaRepository extends JpaRepository<Tarefa, Long> {
     
     List<Tarefa> findByDescricaoContainingIgnoreCase(String descricao);
 
-    List<Tarefa> findByEmpresaId(int empresaId);
+    List<Tarefa> findByEmpresaId(Long empresaId);
     
     List<Tarefa> findByDtEntregaBetween(LocalDateTime dataInicio, LocalDateTime dataFim);
     

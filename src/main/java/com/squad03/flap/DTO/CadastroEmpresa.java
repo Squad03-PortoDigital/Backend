@@ -26,6 +26,8 @@ public record CadastroEmpresa(@NotBlank(message = "O nome não pode estar em bra
 
                               String observacao,
 
-                              String foto)
+                              String foto,
+
+                              String agenteLink)
                               {
 }

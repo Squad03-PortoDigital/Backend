@@ -25,9 +25,6 @@ public class TarefaService {
     private TarefaRepository tarefaRepository;
 
     @Autowired
-    private AgenteRepository agenteRepository;
-
-    @Autowired
     private AnexoRepository anexoRepository;
 
     @Autowired
@@ -163,7 +160,7 @@ public class TarefaService {
      * @param moverDTO O DTO com a nova posição e status.
      * @return O DTO da tarefa movida.
      */
-    public Optional<BuscaTarefa> moverTarefa(Long id, MoverTarefa moverDTO) {
+    public Optional<BuscaTarefa> moverTarefa(Long id, MoverTarefaDTO moverDTO) {
         try {
             return tarefaRepository.findById(id)
                     .map(tarefa -> {
@@ -329,7 +326,7 @@ public class TarefaService {
         }
     }
 
-    public List<BuscaTarefa> getTarefasPorEmpresa(int empresaId){
+    public List<BuscaTarefa> getTarefasPorEmpresa(Long empresaId){
         if (!empresaRepository.existsById(empresaId)) {
             throw new TarefaValidacaoException("Empresa não encontrada com ID: " + empresaId);
         }
