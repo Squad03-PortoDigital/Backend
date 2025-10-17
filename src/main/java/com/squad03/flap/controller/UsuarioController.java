@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,6 +25,25 @@ public class UsuarioController {
 
     @Autowired
     private UsuarioService usuarioService;
+
+    // NOVO: Endpoint para obter usuário autenticado (usado no login do front)
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser(Authentication authentication) {
+        try {
+            String email = authentication.getName(); // Retorna o username/email usado no Basic Auth
+            Optional<Usuario> usuario = usuarioService.buscarPorEmail(email);
+
+            if (usuario.isPresent()) {
+                return ResponseEntity.ok(new UsuarioResponseDTO(usuario.get()));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Usuário não encontrado");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Erro interno do servidor: " + e.getMessage());
+        }
+    }
 
     // Criar novo usuário
     @PostMapping
@@ -54,8 +74,6 @@ public class UsuarioController {
         }
     }
 
-
-
     // Buscar usuário por ID
     @GetMapping("/{id}")
     public ResponseEntity<?> buscarPorId(@PathVariable Long id) {
@@ -71,7 +89,6 @@ public class UsuarioController {
                     .body("Erro interno do servidor: " + e.getMessage());
         }
     }
-
 
     // Atualizar usuário
     @PutMapping("/{id}")
@@ -133,8 +150,6 @@ public class UsuarioController {
         }
     }
 
-
-
     // Buscar usuários por cargo
     @GetMapping("/cargo/{cargoId}")
     public ResponseEntity<List<UsuarioResponseDTO>> buscarPorCargo(@PathVariable Long cargoId) {
@@ -148,7 +163,6 @@ public class UsuarioController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
 
     // Buscar usuários por nome do cargo
     @GetMapping("/cargo/nome/{nomeCargo}")
@@ -164,8 +178,6 @@ public class UsuarioController {
         }
     }
 
-
-
     // Atualizar foto
     @PutMapping("/{id}/foto")
     public ResponseEntity<?> atualizarFoto(@PathVariable Long id, @RequestBody FotoDTO fotoDTO) {
@@ -179,6 +191,4 @@ public class UsuarioController {
                     .body("Erro interno do servidor: " + e.getMessage());
         }
     }
-
-
 }

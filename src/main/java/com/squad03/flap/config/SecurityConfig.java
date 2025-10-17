@@ -11,7 +11,6 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -33,7 +32,6 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // Provedor de autenticação
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -42,39 +40,34 @@ public class SecurityConfig {
         return authProvider;
     }
 
-    // Configuração principal de segurança
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
-
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/usuarios",
-                                "/usuarios/*",
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "cargos"
-                        ).permitAll()
+                        // Swagger - público
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
+
+                        // Apenas o cadastro de novo usuário é público (para quem não tem conta)
+                        .requestMatchers(HttpMethod.POST, "/usuarios").permitAll()
+
+                        // TODOS os outros endpoints exigem autenticação Basic Auth
                         .anyRequest().authenticated()
                 )
-
                 .authenticationProvider(authenticationProvider())
-
-                // Configuração de autenticação BASIC
                 .httpBasic(basic -> {});
 
         return http.build();
     }
 
-    // Configuração CORS simples (permite tudo)
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("*"));
+
+        // Usar allowedOriginPatterns para funcionar com credentials
+        configuration.setAllowedOriginPatterns(List.of("*"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
@@ -84,7 +77,6 @@ public class SecurityConfig {
         return source;
     }
 
-    // AuthenticationManager (caso precise no futuro)
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
