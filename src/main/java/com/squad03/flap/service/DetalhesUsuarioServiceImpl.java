@@ -22,14 +22,34 @@ public class DetalhesUsuarioServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        Usuario usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado com e-mail: " + email));
+        System.out.println("🔍 ===== TENTANDO AUTENTICAR =====");
+        System.out.println("📧 Email recebido: " + email);
 
-        // Define o papel do usuário no formato ROLE_*
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> {
+                    System.out.println("❌ USUÁRIO NÃO ENCONTRADO NO BANCO!");
+                    return new UsernameNotFoundException("Usuário não encontrado com e-mail: " + email);
+                });
+
+        System.out.println("✅ Usuário encontrado no banco");
+        System.out.println("👤 Nome: " + usuario.getNome());
+        System.out.println("🔐 Hash senha (primeiros 20 chars): " + usuario.getSenha().substring(0, Math.min(20, usuario.getSenha().length())));
+        System.out.println("👔 Role: " + usuario.getRole());
+
+        if (usuario.getRole() == null) {
+            System.out.println("⚠️ ATENÇÃO: ROLE É NULL!");
+        }
+
         String roleName = "ROLE_" + usuario.getRole().name();
         List<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority(roleName));
 
-        // Retorna o objeto User do Spring Security com e-mail, senha e permissões
-        return new User(usuario.getEmail(), usuario.getSenha(), authorities);
+        System.out.println("🎫 Authorities: " + authorities);
+
+        UserDetails userDetails = new User(usuario.getEmail(), usuario.getSenha(), authorities);
+
+        System.out.println("✅ UserDetails criado com sucesso");
+        System.out.println("=====================================");
+
+        return userDetails;
     }
 }

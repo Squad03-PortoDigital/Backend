@@ -23,14 +23,14 @@ public class UsuarioService {
     private CargoRepository cargoRepository;
 
     @Autowired
-    private PasswordEncoder passwordEncoder; // 🔐 Para codificar senhas
+    private PasswordEncoder passwordEncoder;
 
     // Regex para validação de e-mail
     private static final Pattern EMAIL_PATTERN = Pattern.compile(
             "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$"
     );
 
-    // Criar novo usuário
+    // ==================== CRIAR NOVO USUÁRIO ====================
     public Usuario salvar(Usuario usuario) {
         validarUsuario(usuario);
 
@@ -40,13 +40,15 @@ public class UsuarioService {
 
         validarCargo(usuario);
 
-        // 🔐 Codifica a senha antes de salvar
-        usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
+        // 🔐 Codifica a senha APENAS no cadastro
+        if (!usuario.getSenha().startsWith("$2a$")) {
+            usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
+        }
 
         return usuarioRepository.save(usuario);
     }
 
-    // Atualizar usuário existente
+    // ==================== ATUALIZAR USUÁRIO ====================
     public Usuario atualizar(Usuario usuario) {
         if (usuario.getId() == null) {
             throw new IllegalArgumentException("ID do usuário não pode ser nulo");
@@ -56,72 +58,68 @@ public class UsuarioService {
             throw new IllegalArgumentException("Usuário não encontrado");
         }
 
-        validarUsuario(usuario);
-
-        Optional<Usuario> usuarioExistente = usuarioRepository.findByEmail(usuario.getEmail());
-        if (usuarioExistente.isPresent() && !usuarioExistente.get().getId().equals(usuario.getId())) {
-            throw new IllegalArgumentException("Já existe um usuário com este e-mail");
-        }
-
-        validarCargo(usuario);
-
-        // 🔐 Se a senha foi alterada, reencoda
-        if (!usuario.getSenha().startsWith("$2a$")) { // evita reencodar senha já criptografada
-            usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
-        }
+        // ❌ NÃO valida senha aqui (já está hashada)
+        // ❌ NÃO busca senha antiga
+        // ✅ Apenas salva a entidade como está
 
         return usuarioRepository.save(usuario);
     }
 
-    // Buscar todos os usuários
+    // ==================== ATUALIZAR FOTO ====================
+    public Usuario atualizarFoto(Long id, String fotoBase64) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+
+        usuario.setFoto(fotoBase64);
+
+        // ✅ Salva SEM alterar a senha
+        return usuarioRepository.save(usuario);
+    }
+
+    // ==================== BUSCAR USUÁRIOS ====================
+
     @Transactional(readOnly = true)
     public List<Usuario> buscarTodos() {
         return usuarioRepository.findAllByOrderByNomeAsc();
     }
 
-    // Buscar usuário por ID
     @Transactional(readOnly = true)
     public Optional<Usuario> buscarPorId(Long id) {
         return usuarioRepository.findById(id);
     }
 
-    // Buscar usuário por e-mail
     @Transactional(readOnly = true)
     public Optional<Usuario> buscarPorEmail(String email) {
         return usuarioRepository.findByEmail(email);
     }
 
-    // Buscar usuários por nome
     @Transactional(readOnly = true)
     public List<Usuario> buscarPorNome(String nome) {
         return usuarioRepository.findByNomeContainingIgnoreCase(nome);
     }
 
-    // Buscar usuários por cargo (ID)
     @Transactional(readOnly = true)
     public List<Usuario> buscarPorCargo(Long cargoId) {
         return usuarioRepository.findByCargoId(cargoId);
     }
 
-    // Buscar usuários por nome do cargo
     @Transactional(readOnly = true)
     public List<Usuario> buscarPorNomeCargo(String nomeCargo) {
         return usuarioRepository.findByCargoNome(nomeCargo);
     }
 
-    // Buscar usuários com foto
     @Transactional(readOnly = true)
     public List<Usuario> buscarUsuariosComFoto() {
         return usuarioRepository.findUsuariosComFoto();
     }
 
-    // Buscar usuários sem foto
     @Transactional(readOnly = true)
     public List<Usuario> buscarUsuariosSemFoto() {
         return usuarioRepository.findUsuariosSemFoto();
     }
 
-    // Deletar usuário
+    // ==================== DELETAR ====================
+
     public void deletar(Long id) {
         if (!usuarioRepository.existsById(id)) {
             throw new IllegalArgumentException("Usuário não encontrado");
@@ -129,24 +127,15 @@ public class UsuarioService {
         usuarioRepository.deleteById(id);
     }
 
-    // Verificar existência
+    // ==================== VERIFICAÇÕES ====================
+
     @Transactional(readOnly = true)
     public boolean existe(Long id) {
         return usuarioRepository.existsById(id);
     }
 
-    // Atualizar foto
-    public Usuario atualizarFoto(Long id, String fotoBase64) {
-        Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+    // ==================== MÉTODOS DE VALIDAÇÃO ====================
 
-        usuario.setFoto(fotoBase64);
-        return usuarioRepository.save(usuario);
-    }
-
-    // ======================
-    // MÉTODOS DE VALIDAÇÃO
-    // ======================
     private void validarUsuario(Usuario usuario) {
         if (usuario.getNome() == null || usuario.getNome().trim().isEmpty()) {
             throw new IllegalArgumentException("Nome não pode ser vazio");
@@ -160,12 +149,14 @@ public class UsuarioService {
             throw new IllegalArgumentException("E-mail inválido");
         }
 
-        if (usuario.getSenha() == null || usuario.getSenha().trim().isEmpty()) {
-            throw new IllegalArgumentException("Senha não pode ser vazia");
-        }
-
-        if (usuario.getSenha().length() < 6) {
-            throw new IllegalArgumentException("Senha deve ter pelo menos 6 caracteres");
+        // ✅ Valida senha APENAS no cadastro (quando a senha vem em texto puro)
+        if (usuario.getSenha() != null && !usuario.getSenha().startsWith("$2a$")) {
+            if (usuario.getSenha().trim().isEmpty()) {
+                throw new IllegalArgumentException("Senha não pode ser vazia");
+            }
+            if (usuario.getSenha().length() < 4) {
+                throw new IllegalArgumentException("Senha deve ter pelo menos 4 caracteres");
+            }
         }
     }
 
