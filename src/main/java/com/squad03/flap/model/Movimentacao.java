@@ -14,10 +14,6 @@ public class Movimentacao {
     private long id;
 
     @ManyToOne
-    @JoinColumn(name = "role_id")
-    private Role role;
-
-    @ManyToOne
     @JoinColumn(name = "listaOrigem")
     private Lista listaOrigem;
 
@@ -29,20 +25,12 @@ public class Movimentacao {
 
     public Movimentacao(Role role, Lista listaOrigem, Lista listaDestino) {
         this.role = role;
-        this.listaOrigem = listaOrigem;
+       this.listaOrigem = listaOrigem;
         this.listaDestino = listaDestino;
     }
 
     public long getId() {
         return id;
-    }
-
-    public Role getRole() {
-        return role;
-    }
-
-    public void setRole(Role role) {
-        this.role = role;
     }
 
     public Lista getListaOrigem() {

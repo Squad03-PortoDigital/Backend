@@ -102,7 +102,7 @@ public class TarefaController {
     })
     public ResponseEntity<BuscaTarefa> moverTarefa(
             @Parameter(description = "ID da tarefa") @PathVariable Long id,
-            @Parameter(description = "Nova posição e/ou status") @RequestBody MoverTarefa moverDTO) {
+            @Parameter(description = "Nova posição e/ou status") @RequestBody MoverTarefaDTO moverDTO) {
         try {
             return tarefaService.moverTarefa(id, moverDTO)
                     .map(ResponseEntity::ok)
@@ -137,7 +137,7 @@ public class TarefaController {
             @ApiResponse(responseCode = "404", description = "Empresa não encontrada")
     })
     public ResponseEntity<List<BuscaTarefa>> getTarefasPorEmpresa(
-            @Parameter(description = "ID da empresa") @PathVariable int empresaId) {
+            @Parameter(description = "ID da empresa") @PathVariable long empresaId) {
         try {
             List<BuscaTarefa> tarefas = tarefaService.getTarefasPorEmpresa(empresaId);
             return ResponseEntity.ok(tarefas);

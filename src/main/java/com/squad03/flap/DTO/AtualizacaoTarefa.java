@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public record AtualizacaoTarefa(
-        int empresaId,
+        Long empresaId,
         String titulo,
         String descricao,
         StatusTarefa status,
