@@ -25,7 +25,7 @@ public class Movimentacao {
 
     public Movimentacao(Role role, Lista listaOrigem, Lista listaDestino) {
         this.role = role;
-       this.listaOrigem = listaOrigem;
+        this.listaOrigem = listaOrigem;
         this.listaDestino = listaDestino;
     }
 

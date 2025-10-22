@@ -44,7 +44,7 @@ public class AnexoController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletarAnexo(@PathVariable Long id) {
+    public ResponseEntity<Void> deletarAnexo(@PathVariable long id) {
         anexoService.deletarAnexo(id);
         return ResponseEntity.noContent().build();
     }
