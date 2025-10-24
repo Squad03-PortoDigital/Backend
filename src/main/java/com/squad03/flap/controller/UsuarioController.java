@@ -1,5 +1,9 @@
 package com.squad03.flap.controller;
 
+import com.squad03.flap.repository.UsuarioRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import com.squad03.flap.model.Usuario;
+import com.squad03.flap.model.Cargo;
 import com.squad03.flap.DTO.UsuarioDTO;
 import com.squad03.flap.DTO.UsuarioResponseDTO;
 import com.squad03.flap.DTO.FotoDTO;
@@ -10,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,8 +27,39 @@ import java.util.stream.Collectors;
 @Tag(name = "Usuários", description = "Gerenciamento de usuários")
 public class UsuarioController {
 
+    private final UsuarioService usuarioService;
+    private final PasswordEncoder passwordEncoder;
+
+    private final UsuarioRepository usuarioRepository;
+
     @Autowired
-    private UsuarioService usuarioService;
+    public UsuarioController(UsuarioService usuarioService, PasswordEncoder passwordEncoder, UsuarioRepository usuarioRepository) {
+        this.usuarioService = usuarioService;
+        this.passwordEncoder = passwordEncoder;
+        this.usuarioRepository = usuarioRepository;
+    }
+
+    // ==================== ENDPOINTS DE AUTENTICAÇÃO ====================
+
+    // Endpoint para obter usuário autenticado (login do front)
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser(Authentication authentication) {
+        try {
+            String email = authentication.getName();
+            Optional<Usuario> usuario = usuarioService.buscarPorEmail(email);
+
+            if (usuario.isPresent()) {
+                return ResponseEntity.ok(new UsuarioResponseDTO(usuario.get()));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuário não encontrado");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Erro interno do servidor: " + e.getMessage());
+        }
+    }
+
+    // ==================== CRUD DE USUÁRIOS ====================
 
     @PostMapping("/cadastro")
     // Note: Esta rota deve ser pública (permitAll()) no SecurityConfig
@@ -32,14 +68,13 @@ public class UsuarioController {
             Usuario usuario = usuarioDTO.toEntity();
 
             Usuario usuarioSalvo = usuarioService.salvar(usuario);
-
-            // Retorna o DTO de Resposta
-            return ResponseEntity.status(HttpStatus.CREATED).body(new UsuarioResponseDTO(usuarioSalvo));
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(new UsuarioResponseDTO(usuarioSalvo));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body("Erro de validação: " + e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Erro interno do servidor: " + e.getMessage());
+                    .body("Erro interno: " + e.getMessage());
         }
     }
 
@@ -75,24 +110,42 @@ public class UsuarioController {
         }
     }
 
-    // Atualizar usuário
+    // ✅ ATUALIZAR USUÁRIO (PUT) - SEM BIO
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('USUARIO_EDITAR_PERMISSAO')")
     public ResponseEntity<?> atualizar(@PathVariable Long id, @RequestBody UsuarioDTO usuarioDTO) {
         try {
-            // Usa o DTO para definir o ID e o toEntity()
-            usuarioDTO.setId(id);
-            Usuario usuario = usuarioDTO.toEntity();
+            Usuario usuarioExistente = usuarioService.buscarPorId(id)
+                    .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
 
-            Usuario usuarioAtualizado = usuarioService.atualizar(usuario);
+            // ✅ Atualiza nome e foto
+            if (usuarioDTO.getNome() != null && !usuarioDTO.getNome().isBlank()) {
+                usuarioExistente.setNome(usuarioDTO.getNome());
+            }
+            if (usuarioDTO.getFoto() != null) {
+                usuarioExistente.setFoto(usuarioDTO.getFoto());
+            }
+            if (usuarioDTO.getCargoId() != null) {
+                Cargo cargo = new Cargo();
+                cargo.setId(usuarioDTO.getCargoId());
+                usuarioExistente.setCargo(cargo);
+            }
+
+            // ❌ NÃO atualiza o email (campo readonly)
+            // O email permanece o mesmo sempre
+
+            Usuario usuarioAtualizado = usuarioRepository.save(usuarioExistente);
             return ResponseEntity.ok(new UsuarioResponseDTO(usuarioAtualizado));
+
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body("Erro de validação: " + e.getMessage());
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Erro interno do servidor: " + e.getMessage());
         }
     }
+
 
     // Deletar usuário
     @DeleteMapping("/{id}")
@@ -108,6 +161,8 @@ public class UsuarioController {
                     .body("Erro interno do servidor: " + e.getMessage());
         }
     }
+
+    // ==================== ENDPOINTS DE BUSCA ====================
 
     // Buscar usuário por email
     @GetMapping("/email/{email}")

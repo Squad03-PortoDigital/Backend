@@ -14,7 +14,6 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-// REMOVEMOS A IMPORTAÇÃO DE NoOpPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -94,15 +93,32 @@ public class SecurityConfig {
                 )
 
                 .httpBasic(basic -> basic.disable());
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        // Swagger - público
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
+
+                        // Apenas o cadastro de novo usuário é público (para quem não tem conta)
+                        .requestMatchers(HttpMethod.POST, "/usuarios").permitAll()
+
+                        // TODOS os outros endpoints exigem autenticação Basic Auth
+                        .anyRequest().authenticated()
+                )
+                .authenticationProvider(authenticationProvider())
+                .httpBasic(basic -> {});
 
         return http.build();
     }
 
-    // --- 3. HANDLERS E CORS ---
-
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+
+        // Usar allowedOriginPatterns para funcionar com credentials
+        configuration.setAllowedOriginPatterns(List.of("*"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
         configuration.setAllowedOrigins(List.of("*"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));

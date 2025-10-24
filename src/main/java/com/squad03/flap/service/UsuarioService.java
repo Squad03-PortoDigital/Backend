@@ -34,7 +34,7 @@ public class UsuarioService {
             "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$"
     );
 
-    // Criar novo usuário
+    // ==================== CRIAR NOVO USUÁRIO ====================
     public Usuario salvar(Usuario usuario) {
         validarUsuario(usuario);
 
@@ -45,13 +45,15 @@ public class UsuarioService {
         validarCargo(usuario);
         validarRole(usuario); // <-- NOVO: Validação da Role
 
-        // 🔐 Codifica a senha antes de salvar
-        usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
+        // 🔐 Codifica a senha APENAS no cadastro
+        if (!usuario.getSenha().startsWith("$2a$")) {
+            usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
+        }
 
         return usuarioRepository.save(usuario);
     }
 
-    // Atualizar usuário existente
+    // ==================== ATUALIZAR USUÁRIO ====================
     public Usuario atualizar(Usuario usuario) {
         if (usuario.getId() == null) {
             throw new IllegalArgumentException("ID do usuário não pode ser nulo");
@@ -79,31 +81,39 @@ public class UsuarioService {
         return usuarioRepository.save(usuario);
     }
 
-    // Buscar todos os usuários
+    // ==================== ATUALIZAR FOTO ====================
+    public Usuario atualizarFoto(Long id, String fotoBase64) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+
+        usuario.setFoto(fotoBase64);
+
+        // ✅ Salva SEM alterar a senha
+        return usuarioRepository.save(usuario);
+    }
+
+    // ==================== BUSCAR USUÁRIOS ====================
+
     @Transactional(readOnly = true)
     public List<Usuario> buscarTodos() {
         return usuarioRepository.findAllByOrderByNomeAsc();
     }
 
-    // Buscar usuário por ID
     @Transactional(readOnly = true)
     public Optional<Usuario> buscarPorId(Long id) {
         return usuarioRepository.findById(id);
     }
 
-    // Buscar usuário por e-mail
     @Transactional(readOnly = true)
     public Optional<Usuario> buscarPorEmail(String email) {
         return usuarioRepository.findByEmail(email);
     }
 
-    // Buscar usuários por nome
     @Transactional(readOnly = true)
     public List<Usuario> buscarPorNome(String nome) {
         return usuarioRepository.findByNomeContainingIgnoreCase(nome);
     }
 
-    // Buscar usuários por cargo (ID)
     @Transactional(readOnly = true)
     public List<Usuario> buscarPorCargo(Long cargoId) {
         // NOTE: Este método requer a criação do findByCargoId no seu UsuarioRepository
@@ -111,7 +121,6 @@ public class UsuarioService {
         return List.of(); // Placeholder para compilação
     }
 
-    // Buscar usuários por nome do cargo
     @Transactional(readOnly = true)
     public List<Usuario> buscarPorNomeCargo(String nomeCargo) {
         // NOTE: Este método requer a criação do findByCargoNome no seu UsuarioRepository
@@ -119,7 +128,6 @@ public class UsuarioService {
         return List.of(); // Placeholder para compilação
     }
 
-    // Buscar usuários com foto
     @Transactional(readOnly = true)
     public List<Usuario> buscarUsuariosComFoto() {
         // NOTE: Este método requer a criação do findUsuariosComFoto no seu UsuarioRepository
@@ -127,7 +135,6 @@ public class UsuarioService {
         return List.of(); // Placeholder para compilação
     }
 
-    // Buscar usuários sem foto
     @Transactional(readOnly = true)
     public List<Usuario> buscarUsuariosSemFoto() {
         // NOTE: Este método requer a criação do findUsuariosSemFoto no seu UsuarioRepository
@@ -135,7 +142,8 @@ public class UsuarioService {
         return List.of(); // Placeholder para compilação
     }
 
-    // Deletar usuário
+    // ==================== DELETAR ====================
+
     public void deletar(Long id) {
         if (!usuarioRepository.existsById(id)) {
             throw new IllegalArgumentException("Usuário não encontrado");
@@ -143,24 +151,15 @@ public class UsuarioService {
         usuarioRepository.deleteById(id);
     }
 
-    // Verificar existência
+    // ==================== VERIFICAÇÕES ====================
+
     @Transactional(readOnly = true)
     public boolean existe(Long id) {
         return usuarioRepository.existsById(id);
     }
 
-    // Atualizar foto
-    public Usuario atualizarFoto(Long id, String fotoBase64) {
-        Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+    // ==================== MÉTODOS DE VALIDAÇÃO ====================
 
-        usuario.setFoto(fotoBase64);
-        return usuarioRepository.save(usuario);
-    }
-
-    // ======================
-    // MÉTODOS DE VALIDAÇÃO
-    // ======================
     private void validarUsuario(Usuario usuario) {
         if (usuario.getNome() == null || usuario.getNome().trim().isEmpty()) {
             throw new IllegalArgumentException("Nome não pode ser vazio");
@@ -174,12 +173,14 @@ public class UsuarioService {
             throw new IllegalArgumentException("E-mail inválido");
         }
 
-        if (usuario.getSenha() == null || usuario.getSenha().trim().isEmpty()) {
-            throw new IllegalArgumentException("Senha não pode ser vazia");
-        }
-
-        if (usuario.getSenha().length() < 6) {
-            throw new IllegalArgumentException("Senha deve ter pelo menos 6 caracteres");
+        // ✅ Valida senha APENAS no cadastro (quando a senha vem em texto puro)
+        if (usuario.getSenha() != null && !usuario.getSenha().startsWith("$2a$")) {
+            if (usuario.getSenha().trim().isEmpty()) {
+                throw new IllegalArgumentException("Senha não pode ser vazia");
+            }
+            if (usuario.getSenha().length() < 4) {
+                throw new IllegalArgumentException("Senha deve ter pelo menos 4 caracteres");
+            }
         }
     }
 
