@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -46,9 +47,14 @@ public class ListaController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('LISTA_GERENCIAR')") // RBAC: Protege a alteração de Listas
     public ResponseEntity<BuscaLista> updateLista(@PathVariable Long id, @RequestBody AtualizacaoLista dados) {
-        BuscaLista lista = listaService.AtualizarLista(id, dados);
-        return ResponseEntity.ok().body(lista);
+        // O service retorna Optional<BuscaLista>
+        return listaService.atualizarLista(id, dados)
+                // Se o Optional tiver valor (Lista atualizada): retorna 200 OK
+                .map(ResponseEntity::ok)
+                // Se o Optional estiver vazio (Lista não encontrada): retorna 404 Not Found
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
