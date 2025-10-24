@@ -7,12 +7,14 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+// REMOVEMOS A IMPORTAÇÃO DE NoOpPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -25,6 +27,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Autowired
@@ -34,7 +37,7 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        return new BCryptPasswordEncoder(); // Define o BCrypt como o único encoder
     }
 
     @Bean
@@ -62,7 +65,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/usuarios/cadastro").permitAll()
                         .requestMatchers(HttpMethod.POST, "/usuarios/login").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/cargos").permitAll() // Assumindo GET de cargos é público
+                        .requestMatchers(HttpMethod.GET, "/cargos").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/roles").permitAll()
 
                         // Todas as outras rotas exigem autenticação
                         .anyRequest().authenticated()
@@ -70,9 +74,9 @@ public class SecurityConfig {
 
                 // CONFIGURAÇÃO DO FORM LOGIN
                 .formLogin(form -> form
-                        .loginProcessingUrl("/usuarios/login") // URL que o front-end irá enviar o POST
-                        .usernameParameter("email")               // Nome do campo de usuário
-                        .passwordParameter("senha")               // Nome do campo de senha
+                        .loginProcessingUrl("/usuarios/login")
+                        .usernameParameter("email")
+                        .passwordParameter("senha")
                         .successHandler(this.authenticationSuccessHandler())
                         .failureHandler((request, response, exception) -> {
                             response.setStatus(HttpStatus.UNAUTHORIZED.value());
@@ -85,11 +89,11 @@ public class SecurityConfig {
                 .logout(logout -> logout
                         .logoutUrl("/usuarios/logout")
                         .logoutSuccessHandler((request, response, authentication) ->
-                                response.setStatus(HttpStatus.OK.value())) // Retorna 200 OK no logout
+                                response.setStatus(HttpStatus.OK.value()))
                         .permitAll()
                 )
 
-                .httpBasic(basic -> basic.disable()); // Desativa autenticação básica desnecessária
+                .httpBasic(basic -> basic.disable());
 
         return http.build();
     }

@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -98,8 +99,10 @@ public class TarefaController {
     @Operation(summary = "Mover tarefa no Kanban", description = "Move uma tarefa entre colunas ou altera sua posição")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Tarefa movida com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Acesso negado: Usuário não é membro"),
             @ApiResponse(responseCode = "404", description = "Tarefa não encontrada")
     })
+    @PreAuthorize("hasAuthority('TAREFA_MOVER')")
     public ResponseEntity<BuscaTarefa> moverTarefa(
             @Parameter(description = "ID da tarefa") @PathVariable Long id,
             @Parameter(description = "Nova posição e/ou status") @RequestBody MoverTarefaDTO moverDTO) {
@@ -107,7 +110,9 @@ public class TarefaController {
             return tarefaService.moverTarefa(id, moverDTO)
                     .map(ResponseEntity::ok)
                     .orElse(ResponseEntity.notFound().build());
-        } catch (Exception e) {
+        } catch (TarefaValidacaoException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
+        }catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

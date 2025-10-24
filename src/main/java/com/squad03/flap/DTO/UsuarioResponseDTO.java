@@ -22,7 +22,7 @@ public class UsuarioResponseDTO {
             this.nome = usuario.getNome();
             this.email = usuario.getEmail();
             this.foto = usuario.getFoto();
-            this.role = usuario.getRole() != null ? usuario.getRole().name() : null; // <- populate role
+            this.role = usuario.getRole() != null ? usuario.getRole().getNome() : null; // <- populate role
 
             if (usuario.getCargo() != null) {
                 this.cargo = new CargoDTO(usuario.getCargo());

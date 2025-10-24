@@ -1,15 +1,15 @@
 package com.squad03.flap.controller;
 
-import com.squad03.flap.model.Usuario;
 import com.squad03.flap.DTO.UsuarioDTO;
 import com.squad03.flap.DTO.UsuarioResponseDTO;
-import com.squad03.flap.DTO.LoginDTO;
 import com.squad03.flap.DTO.FotoDTO;
+import com.squad03.flap.model.Usuario;
 import com.squad03.flap.service.UsuarioService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,15 +25,18 @@ public class UsuarioController {
     @Autowired
     private UsuarioService usuarioService;
 
-    // Criar novo usuário
-    @PostMapping
+    @PostMapping("/cadastro")
+    // Note: Esta rota deve ser pública (permitAll()) no SecurityConfig
     public ResponseEntity<?> criar(@RequestBody UsuarioDTO usuarioDTO) {
         try {
             Usuario usuario = usuarioDTO.toEntity();
+
             Usuario usuarioSalvo = usuarioService.salvar(usuario);
+
+            // Retorna o DTO de Resposta
             return ResponseEntity.status(HttpStatus.CREATED).body(new UsuarioResponseDTO(usuarioSalvo));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body("Erro: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Erro de validação: " + e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Erro interno do servidor: " + e.getMessage());
@@ -42,6 +45,7 @@ public class UsuarioController {
 
     // Buscar todos os usuários
     @GetMapping
+    @PreAuthorize("hasAuthority('USUARIO_LER')")
     public ResponseEntity<List<UsuarioResponseDTO>> buscarTodos() {
         try {
             List<Usuario> usuarios = usuarioService.buscarTodos();
@@ -54,10 +58,9 @@ public class UsuarioController {
         }
     }
 
-
-
     // Buscar usuário por ID
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('USUARIO_LER')")
     public ResponseEntity<?> buscarPorId(@PathVariable Long id) {
         try {
             Optional<Usuario> usuario = usuarioService.buscarPorId(id);
@@ -72,17 +75,19 @@ public class UsuarioController {
         }
     }
 
-
     // Atualizar usuário
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('USUARIO_EDITAR_PERMISSAO')")
     public ResponseEntity<?> atualizar(@PathVariable Long id, @RequestBody UsuarioDTO usuarioDTO) {
         try {
+            // Usa o DTO para definir o ID e o toEntity()
             usuarioDTO.setId(id);
             Usuario usuario = usuarioDTO.toEntity();
+
             Usuario usuarioAtualizado = usuarioService.atualizar(usuario);
             return ResponseEntity.ok(new UsuarioResponseDTO(usuarioAtualizado));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body("Erro: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Erro de validação: " + e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Erro interno do servidor: " + e.getMessage());
@@ -91,6 +96,7 @@ public class UsuarioController {
 
     // Deletar usuário
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('USUARIO_EDITAR_PERMISSAO')")
     public ResponseEntity<?> deletar(@PathVariable Long id) {
         try {
             usuarioService.deletar(id);
@@ -105,6 +111,7 @@ public class UsuarioController {
 
     // Buscar usuário por email
     @GetMapping("/email/{email}")
+    @PreAuthorize("hasAuthority('USUARIO_LER')")
     public ResponseEntity<?> buscarPorEmail(@PathVariable String email) {
         try {
             Optional<Usuario> usuario = usuarioService.buscarPorEmail(email);
@@ -121,6 +128,7 @@ public class UsuarioController {
 
     // Buscar usuários por nome
     @GetMapping("/buscar")
+    @PreAuthorize("hasAuthority('USUARIO_LER')")
     public ResponseEntity<List<UsuarioResponseDTO>> buscarPorNome(@RequestParam String nome) {
         try {
             List<Usuario> usuarios = usuarioService.buscarPorNome(nome);
@@ -133,10 +141,9 @@ public class UsuarioController {
         }
     }
 
-
-
     // Buscar usuários por cargo
     @GetMapping("/cargo/{cargoId}")
+    @PreAuthorize("hasAuthority('USUARIO_LER')")
     public ResponseEntity<List<UsuarioResponseDTO>> buscarPorCargo(@PathVariable Long cargoId) {
         try {
             List<Usuario> usuarios = usuarioService.buscarPorCargo(cargoId);
@@ -149,9 +156,9 @@ public class UsuarioController {
         }
     }
 
-
     // Buscar usuários por nome do cargo
     @GetMapping("/cargo/nome/{nomeCargo}")
+    @PreAuthorize("hasAuthority('USUARIO_LER')")
     public ResponseEntity<List<UsuarioResponseDTO>> buscarPorNomeCargo(@PathVariable String nomeCargo) {
         try {
             List<Usuario> usuarios = usuarioService.buscarPorNomeCargo(nomeCargo);
@@ -164,10 +171,9 @@ public class UsuarioController {
         }
     }
 
-
-
     // Atualizar foto
     @PutMapping("/{id}/foto")
+    @PreAuthorize("hasAuthority('USUARIO_EDITAR_PERMISSAO')") // Exige permissão de edição
     public ResponseEntity<?> atualizarFoto(@PathVariable Long id, @RequestBody FotoDTO fotoDTO) {
         try {
             Usuario usuarioAtualizado = usuarioService.atualizarFoto(id, fotoDTO.getFoto());
@@ -179,6 +185,4 @@ public class UsuarioController {
                     .body("Erro interno do servidor: " + e.getMessage());
         }
     }
-
-
 }

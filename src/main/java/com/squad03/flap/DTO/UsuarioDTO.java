@@ -1,5 +1,6 @@
 package com.squad03.flap.DTO;
 
+import com.squad03.flap.model.Role;
 import com.squad03.flap.model.Usuario;
 import com.squad03.flap.model.Cargo;
 import java.util.Objects;
@@ -8,6 +9,7 @@ public class UsuarioDTO {
 
     private Long id;
     private Long cargoId;
+    private Long roleId;
     private String foto;
     private String nome;
     private String email;
@@ -48,6 +50,11 @@ public class UsuarioDTO {
         usuario.setSenha(this.senha);
         usuario.setFoto(this.foto);
 
+        if (this.roleId != null){
+            Role role = new Role();
+            role.setId(this.roleId);
+            usuario.setRole(role);
+        }
 
         if (this.cargoId != null) {
             Cargo cargo = new Cargo();
@@ -75,8 +82,13 @@ public class UsuarioDTO {
         this.cargoId = cargoId;
     }
 
+    public Long getRoleId() {
+        return roleId;
+    }
 
-
+    public void setRoleId(Long roleId) {
+        this.roleId = roleId;
+    }
 
     public String getFoto() {
         return foto;

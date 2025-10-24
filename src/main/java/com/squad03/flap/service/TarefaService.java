@@ -10,6 +10,8 @@ import com.squad03.flap.model.*;
 import com.squad03.flap.model.Tarefa.StatusTarefa;
 import com.squad03.flap.model.Tarefa.PrioridadeTarefa;
 import com.squad03.flap.repository.*;
+import com.squad03.flap.service.MembroService;
+import com.squad03.flap.util.SegurancaUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -39,6 +41,18 @@ public class TarefaService {
     @Autowired
     private ComentarioService comentarioService;
 
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private MembroService membroService;
+
+    @Autowired
+    private MembroRepository membroRepository;
+
+    @Autowired
+    private SegurancaUtils segurancaUtils;
+
     /**
      * Cria uma nova tarefa, buscando as entidades relacionadas e validando os dados.
      * @param cadastroTarefa O DTO com os dados da tarefa a ser criada.
@@ -46,7 +60,12 @@ public class TarefaService {
      */
     public BuscaTarefa criarTarefa(CadastroTarefa cadastroTarefa) {
         try {
-            // Busca e valida as entidades relacionadas
+            // --- PASSO 1: OBTEM O USUÁRIO LOGADO (CRIADOR) ---
+            String emailUsuarioLogado = segurancaUtils.getUsuarioLogadoEmail();
+            Usuario usuarioCriador = usuarioRepository.findByEmail(emailUsuarioLogado)
+                    .orElseThrow(() -> new RuntimeException("Usuário logado não encontrado no sistema."));
+
+            // --- PASSO 2: BUSCA E VALIDA AS ENTIDADES (Empresa e Lista) ---
             Optional<Empresa> empresaOptional = empresaRepository.findById(cadastroTarefa.empresaId());
             if (empresaOptional.isEmpty()) {
                 throw new TarefaValidacaoException("Empresa não encontrada com ID: " + cadastroTarefa.empresaId());
@@ -59,12 +78,14 @@ public class TarefaService {
             }
             Lista lista = listaOptional.get();
 
-           //Integer proximaPosicao = tarefaRepository.findMaxPosicaoByAgenteAndStatus(agente, StatusTarefa.A_FAZER);
-            //if (proximaPosicao == null) {
-            //    proximaPosicao = 0;
-            //} else {
-            //    proximaPosicao++;
-            //}
+            StatusTarefa statusInicial = StatusTarefa.A_FAZER;
+
+            Integer proximaPosicao = tarefaRepository.findMaxPosicaoByStatus(StatusTarefa.A_FAZER);
+            if (proximaPosicao == null) {
+                proximaPosicao = 0;
+            } else {
+                proximaPosicao++;
+            }
 
             Tarefa novaTarefa = Tarefa.builder()
                     .empresa(empresa)
@@ -75,12 +96,22 @@ public class TarefaService {
                     .dtEntrega(cadastroTarefa.dtEntrega())
                     .tags(cadastroTarefa.tags() != null ? cadastroTarefa.tags() : new ArrayList<>())
                     .observacoes(cadastroTarefa.observacoes())
-                    .status(StatusTarefa.A_FAZER)
-                    //.posicao(proximaPosicao)
+                    .status(statusInicial)
+                    .posicao(proximaPosicao)
                     .build();
 
             Tarefa tarefaSalva = tarefaRepository.save(novaTarefa);
+
+
+
+            MembroCreateDTO membroDTO = new MembroCreateDTO();
+            membroDTO.setUsuarioId(usuarioCriador.getId());
+            membroDTO.setTarefaId(tarefaSalva.getId());
+
+            membroService.criarMembro(membroDTO);
+
             return converterParaDTO(tarefaSalva);
+
         } catch (Exception e) {
             throw new RuntimeException("Erro ao criar tarefa: " + e.getMessage(), e);
         }
@@ -161,20 +192,39 @@ public class TarefaService {
      * @return O DTO da tarefa movida.
      */
     public Optional<BuscaTarefa> moverTarefa(Long id, MoverTarefaDTO moverDTO) {
-        try {
-            return tarefaRepository.findById(id)
-                    .map(tarefa -> {
-                        if (moverDTO.novoStatus() != null) {
-                            tarefa.setStatus(moverDTO.novoStatus());
-                        }
-                        if (moverDTO.novaPosicao() != null) {
-                            tarefa.setPosicao(moverDTO.novaPosicao());
-                        }
-                        return converterParaDTO(tarefaRepository.save(tarefa));
-                    });
-        } catch (Exception e) {
-            throw new RuntimeException("Erro ao mover tarefa: " + e.getMessage(), e);
+
+        // --- 1. OBTEM USUÁRIO LOGADO E VALIDAÇÃO ---
+        String emailUsuarioLogado = segurancaUtils.getUsuarioLogadoEmail();
+
+        // Lógica: Lança exceção se usuário não for encontrado no DB
+        Usuario usuarioLogado = usuarioRepository.findByEmail(emailUsuarioLogado)
+                .orElseThrow(() -> new TarefaValidacaoException("Usuário logado não encontrado no sistema."));
+
+        // --- 2. CHECAGEM DE MEMBRO ---
+        boolean isMembro = membroRepository.existsByUsuarioIdAndTarefaId(usuarioLogado.getId(), id);
+
+        if (!isMembro) {
+            // Se não for membro, LANÇA A EXCEÇÃO correta para o Controller tratar (403 Forbidden)
+            throw new TarefaValidacaoException("Acesso negado. Você não é membro desta tarefa para movê-la.");
         }
+
+        // --- 3. LÓGICA DE ATUALIZAÇÃO ---
+        return tarefaRepository.findById(id)
+                .map(tarefa -> {
+                    // Lógica de movimentação
+                    if (moverDTO.novoStatus() != null) {
+                        tarefa.setStatus(moverDTO.novoStatus());
+                    }
+                    if (moverDTO.novaPosicao() != null) {
+                        tarefa.setPosicao(moverDTO.novaPosicao());
+                    }
+                    // Você também pode querer buscar a nova Lista aqui para validar o status, se for o caso.
+
+                    return converterParaDTO(tarefaRepository.save(tarefa));
+                });
+
+        // NOTA: Os blocos try-catch e relançamento de RuntimeException são removidos/simplificados aqui,
+        // pois o Controller pode tratar a TarefaValidacaoException diretamente.
     }
 
     /**
