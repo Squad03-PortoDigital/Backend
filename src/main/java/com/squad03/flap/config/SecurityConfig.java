@@ -93,20 +93,7 @@ public class SecurityConfig {
                 )
 
                 .httpBasic(basic -> basic.disable());
-                .csrf(csrf -> csrf.disable())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        // Swagger - público
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
 
-                        // Apenas o cadastro de novo usuário é público (para quem não tem conta)
-                        .requestMatchers(HttpMethod.POST, "/usuarios").permitAll()
-
-                        // TODOS os outros endpoints exigem autenticação Basic Auth
-                        .anyRequest().authenticated()
-                )
-                .authenticationProvider(authenticationProvider())
-                .httpBasic(basic -> {});
 
         return http.build();
     }
