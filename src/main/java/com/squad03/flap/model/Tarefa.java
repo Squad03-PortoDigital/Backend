@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -24,24 +25,36 @@ public class Tarefa {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // ⭐ CORRIGIDO: Adicionado JsonIgnoreProperties para evitar lazy loading error
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "empresa_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Empresa empresa;
 
+    // ⭐ CORRIGIDO: Adicionado JsonIgnoreProperties
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lista_id", nullable = false)
+    @JoinColumn(name = "lista_id", nullable = true) // ⭐ Mudado para nullable=true
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Lista lista;
 
+    // ⭐ CORRIGIDO: Adicionado JsonIgnoreProperties para evitar serialização circular
     @OneToMany(mappedBy = "tarefa", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties({"tarefa"})
     private Set<Anexo> anexos = new HashSet<>();
 
+    // ⭐ CORRIGIDO: Adicionado JsonIgnoreProperties
     @OneToMany(mappedBy = "tarefa", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties({"tarefa"})
     private Set<Checklist> checklists = new HashSet<>();
 
+    // ⭐ CORRIGIDO: Adicionado JsonIgnoreProperties
     @OneToMany(mappedBy = "tarefa", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties({"tarefa"})
     private Set<Comentario> comentarios = new HashSet<>();
 
+    // ⭐ CORRIGIDO: Adicionado JsonIgnoreProperties
     @OneToMany(mappedBy = "tarefa", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties({"tarefa"})
     private Set<Membro> membros = new HashSet<>();
 
     @Column(nullable = false, length = 100)
@@ -68,7 +81,8 @@ public class Tarefa {
 
     private LocalDateTime dtConclusao;
 
-    @ElementCollection
+    // ⭐ CORRIGIDO: Tags agora é um ElementCollection, não causa lazy loading error
+    @ElementCollection(fetch = FetchType.EAGER) // ⭐ EAGER para carregar imediatamente
     @CollectionTable(name = "tarefa_tags", joinColumns = @JoinColumn(name = "tarefa_id"))
     @Column(name = "tag")
     private List<String> tags;
@@ -133,5 +147,4 @@ public class Tarefa {
             return descricao;
         }
     }
-
 }

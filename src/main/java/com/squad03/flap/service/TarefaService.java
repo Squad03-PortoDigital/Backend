@@ -65,18 +65,23 @@ public class TarefaService {
             Usuario usuarioCriador = usuarioRepository.findByEmail(emailUsuarioLogado)
                     .orElseThrow(() -> new RuntimeException("Usuário logado não encontrado no sistema."));
 
-            // --- PASSO 2: BUSCA E VALIDA AS ENTIDADES (Empresa e Lista) ---
+            // --- PASSO 2: BUSCA E VALIDA EMPRESA (OBRIGATÓRIA) ---
             Optional<Empresa> empresaOptional = empresaRepository.findById(cadastroTarefa.empresaId());
             if (empresaOptional.isEmpty()) {
                 throw new TarefaValidacaoException("Empresa não encontrada com ID: " + cadastroTarefa.empresaId());
             }
             Empresa empresa = empresaOptional.get();
 
-            Optional<Lista> listaOptional = listaRepository.findById(cadastroTarefa.listaId());
-            if (listaOptional.isEmpty()) {
-                throw new TarefaValidacaoException("Lista não encontrada com ID: " + cadastroTarefa.listaId());
+            // --- PASSO 3: BUSCA LISTA (OPCIONAL) ---
+            // ⭐ CORRIGIDO: Só busca se listaId não for null
+            Lista lista = null;
+            if (cadastroTarefa.listaId() != null) {
+                Optional<Lista> listaOptional = listaRepository.findById(cadastroTarefa.listaId());
+                if (listaOptional.isEmpty()) {
+                    throw new TarefaValidacaoException("Lista não encontrada com ID: " + cadastroTarefa.listaId());
+                }
+                lista = listaOptional.get();
             }
-            Lista lista = listaOptional.get();
 
             StatusTarefa statusInicial = StatusTarefa.A_FAZER;
 
@@ -89,7 +94,7 @@ public class TarefaService {
 
             Tarefa novaTarefa = Tarefa.builder()
                     .empresa(empresa)
-                    .lista(lista)
+                    .lista(lista) // ⭐ Pode ser null agora
                     .titulo(cadastroTarefa.titulo())
                     .descricao(cadastroTarefa.descricao())
                     .prioridade(cadastroTarefa.prioridade() != null ? cadastroTarefa.prioridade() : PrioridadeTarefa.MEDIA)
@@ -101,8 +106,6 @@ public class TarefaService {
                     .build();
 
             Tarefa tarefaSalva = tarefaRepository.save(novaTarefa);
-
-
 
             MembroCreateDTO membroDTO = new MembroCreateDTO();
             membroDTO.setUsuarioId(usuarioCriador.getId());
@@ -155,7 +158,6 @@ public class TarefaService {
         try {
             return tarefaRepository.findById(id)
                     .map(tarefa -> {
-                        // Lógica de atualização dos campos
                         if (atualizarDTO.titulo() != null) {
                             tarefa.setTitulo(atualizarDTO.titulo());
                         }
@@ -177,7 +179,6 @@ public class TarefaService {
                         if (atualizarDTO.observacoes() != null) {
                             tarefa.setObservacoes(atualizarDTO.observacoes());
                         }
-                        // Salvando a tarefa e retornando o DTO
                         return converterParaDTO(tarefaRepository.save(tarefa));
                     });
         } catch (Exception e) {
@@ -192,39 +193,26 @@ public class TarefaService {
      * @return O DTO da tarefa movida.
      */
     public Optional<BuscaTarefa> moverTarefa(Long id, MoverTarefaDTO moverDTO) {
-
-        // --- 1. OBTEM USUÁRIO LOGADO E VALIDAÇÃO ---
         String emailUsuarioLogado = segurancaUtils.getUsuarioLogadoEmail();
-
-        // Lógica: Lança exceção se usuário não for encontrado no DB
         Usuario usuarioLogado = usuarioRepository.findByEmail(emailUsuarioLogado)
                 .orElseThrow(() -> new TarefaValidacaoException("Usuário logado não encontrado no sistema."));
 
-        // --- 2. CHECAGEM DE MEMBRO ---
         boolean isMembro = membroRepository.existsByUsuarioIdAndTarefaId(usuarioLogado.getId(), id);
 
         if (!isMembro) {
-            // Se não for membro, LANÇA A EXCEÇÃO correta para o Controller tratar (403 Forbidden)
             throw new TarefaValidacaoException("Acesso negado. Você não é membro desta tarefa para movê-la.");
         }
 
-        // --- 3. LÓGICA DE ATUALIZAÇÃO ---
         return tarefaRepository.findById(id)
                 .map(tarefa -> {
-                    // Lógica de movimentação
                     if (moverDTO.novoStatus() != null) {
                         tarefa.setStatus(moverDTO.novoStatus());
                     }
                     if (moverDTO.novaPosicao() != null) {
                         tarefa.setPosicao(moverDTO.novaPosicao());
                     }
-                    // Você também pode querer buscar a nova Lista aqui para validar o status, se for o caso.
-
                     return converterParaDTO(tarefaRepository.save(tarefa));
                 });
-
-        // NOTA: Os blocos try-catch e relançamento de RuntimeException são removidos/simplificados aqui,
-        // pois o Controller pode tratar a TarefaValidacaoException diretamente.
     }
 
     /**
@@ -243,13 +231,6 @@ public class TarefaService {
             throw new RuntimeException("Erro ao deletar tarefa: " + e.getMessage(), e);
         }
     }
-
-    /**
-     * Busca tarefas por agente.
-     * @param agente A entidade Agente.
-     * @return Uma lista de DTOs de tarefas.
-     */
-
 
     /**
      * Busca tarefas por status.
@@ -391,7 +372,7 @@ public class TarefaService {
             return new BuscaTarefa(
                     tarefa.getId(),
                     tarefa.getEmpresa() != null ? tarefa.getEmpresa().getId() : null,
-                    tarefa.getLista() != null ? tarefa.getLista().getId() : null, // <-- Adicionado ao retorno
+                    tarefa.getLista() != null ? tarefa.getLista().getId() : null,
                     tarefa.getTitulo(),
                     tarefa.getDescricao(),
                     tarefa.getStatus(),

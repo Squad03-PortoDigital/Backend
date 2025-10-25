@@ -7,6 +7,9 @@ import com.squad03.flap.model.Cargo;
 import com.squad03.flap.DTO.UsuarioDTO;
 import com.squad03.flap.DTO.UsuarioResponseDTO;
 import com.squad03.flap.DTO.FotoDTO;
+import com.squad03.flap.model.Role;
+import java.util.Map;
+
 import com.squad03.flap.model.Usuario;
 import com.squad03.flap.service.UsuarioService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -62,21 +65,61 @@ public class UsuarioController {
     // ==================== CRUD DE USUÁRIOS ====================
 
     @PostMapping("/cadastro")
-    // Note: Esta rota deve ser pública (permitAll()) no SecurityConfig
     public ResponseEntity<?> criar(@RequestBody UsuarioDTO usuarioDTO) {
         try {
+            // Validações básicas
+            if (usuarioDTO.getNome() == null || usuarioDTO.getNome().isBlank()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "Nome é obrigatório"));
+            }
+
+            if (usuarioDTO.getEmail() == null || usuarioDTO.getEmail().isBlank()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "E-mail é obrigatório"));
+            }
+
+            if (usuarioDTO.getSenha() == null || usuarioDTO.getSenha().isBlank()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "Senha é obrigatória"));
+            }
+
+            // Verifica se o email já existe
+            Optional<Usuario> usuarioExistente = usuarioService.buscarPorEmail(usuarioDTO.getEmail());
+            if (usuarioExistente.isPresent()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "E-mail já cadastrado"));
+            }
+
             Usuario usuario = usuarioDTO.toEntity();
+
+            // ✅ Define cargo padrão se não foi informado
+            if (usuario.getCargo() == null || usuario.getCargo().getId() == null) {
+                Cargo cargoDefault = new Cargo();
+                cargoDefault.setId(1L); // ID do cargo padrão
+                usuario.setCargo(cargoDefault);
+            }
+
+            // ✅ Define role padrão se não foi informada
+            if (usuario.getRole() == null || usuario.getRole().getId() == null) {
+                Role roleDefault = new Role();
+                roleDefault.setId(1L); // ID da role padrão (usuário comum)
+                usuario.setRole(roleDefault);
+            }
 
             Usuario usuarioSalvo = usuarioService.salvar(usuario);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(new UsuarioResponseDTO(usuarioSalvo));
+
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body("Erro de validação: " + e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Erro de validação: " + e.getMessage()));
         } catch (Exception e) {
+            e.printStackTrace(); // Para debug
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Erro interno: " + e.getMessage());
+                    .body(Map.of("message", "Erro interno: " + e.getMessage()));
         }
     }
+
 
     // Buscar todos os usuários
     @GetMapping

@@ -11,7 +11,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,7 +20,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.io.IOException;
 import java.util.List;
 
 @Configuration
@@ -76,9 +74,10 @@ public class SecurityConfig {
                         .loginProcessingUrl("/usuarios/login")
                         .usernameParameter("email")
                         .passwordParameter("senha")
-                        .successHandler(this.authenticationSuccessHandler())
+                        .successHandler(authenticationSuccessHandler())
                         .failureHandler((request, response, exception) -> {
                             response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                            response.setContentType("application/json");
                             response.getWriter().write("{\"error\": \"Falha na autenticação: Credenciais inválidas\"}");
                         })
                         .permitAll()
@@ -87,38 +86,44 @@ public class SecurityConfig {
                 // CONFIGURAÇÃO DE LOGOUT
                 .logout(logout -> logout
                         .logoutUrl("/usuarios/logout")
-                        .logoutSuccessHandler((request, response, authentication) ->
-                                response.setStatus(HttpStatus.OK.value()))
+                        .logoutSuccessHandler((request, response, authentication) -> {
+                            response.setStatus(HttpStatus.OK.value());
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"message\": \"Logout realizado com sucesso\"}");
+                        })
                         .permitAll()
                 )
 
                 .httpBasic(basic -> basic.disable());
 
-
         return http.build();
     }
+
+    // --- 3. CONFIGURAÇÃO CORS (CORRIGIDA) ---
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Usar allowedOriginPatterns para funcionar com credentials
+        // ✅ USAR allowedOriginPatterns com wildcard quando allowCredentials = true
         configuration.setAllowedOriginPatterns(List.of("*"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true);
-        configuration.setAllowedOrigins(List.of("*"));
+
+        // ❌ REMOVIDO: não usar allowedOrigins("*") com credentials
+        // configuration.setAllowedOrigins(List.of("*")); // <-- ESSA LINHA CAUSAVA O ERRO
+
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 
+    // --- 4. SUCCESS HANDLER ---
+
     @Bean
     public AuthenticationSuccessHandler authenticationSuccessHandler() {
-        // Retorna um JSON simples e o Cookie de Sessão no sucesso
         return (request, response, authentication) -> {
             response.setStatus(HttpStatus.OK.value());
             response.setContentType("application/json");
