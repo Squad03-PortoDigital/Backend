@@ -22,7 +22,6 @@ public class Usuario {
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
 
-    @Lob
     @Column(name = "foto", columnDefinition = "TEXT")
     private String foto;
 
