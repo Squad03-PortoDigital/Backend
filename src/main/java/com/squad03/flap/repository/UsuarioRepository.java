@@ -1,9 +1,12 @@
 package com.squad03.flap.repository;
 
+import com.squad03.flap.DTO.UsuarioEquipeDTO;
 import com.squad03.flap.model.Cargo;
 import com.squad03.flap.model.Usuario;
 
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -56,4 +59,18 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     // Buscar usuários que não possuem foto
     @Query("SELECT u FROM Usuario u WHERE u.foto IS NULL OR u.foto = ''")
     List<Usuario> findUsuariosSemFoto();
+
+    @Query("SELECT new com.squad03.flap.DTO.UsuarioEquipeDTO(" +
+            "   u.id, " +
+            "   u.nome, " +
+            "   u.email, " +
+            "   c.nome, " +
+            "   u.foto, " +
+            "   COUNT(m) " +
+            ") " +
+            "FROM Usuario u " +
+            "JOIN u.cargo c " +
+            "LEFT JOIN u.membros m " +
+            "GROUP BY u.id, u.nome, u.email, c.nome, u.foto")
+    Page<UsuarioEquipeDTO> findEquipeComContagemTarefas(Pageable pageable);
 }
