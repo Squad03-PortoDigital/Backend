@@ -3,6 +3,7 @@ package com.squad03.flap.repository;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.squad03.flap.model.Lista;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -47,4 +48,6 @@ public interface TarefaRepository extends JpaRepository<Tarefa, Long> {
     
     @Query("SELECT t FROM Tarefa t WHERE t.dtEntrega IS NOT NULL AND t.dtEntrega < CURRENT_TIMESTAMP AND t.status NOT IN ('CONCLUIDA', 'CANCELADA')")
     List<Tarefa> findTarefasAtrasadas();
+
+    List<Tarefa> findByListaOrderByPosicaoAsc(Lista novaLista);
 }

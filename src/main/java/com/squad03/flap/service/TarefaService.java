@@ -219,13 +219,13 @@ public class TarefaService {
      * @param moverDTO O DTO com a nova posição e status.
      * @return O DTO da tarefa movida.
      */
+    @Transactional
     public Optional<BuscaTarefa> moverTarefa(Long id, MoverTarefaDTO moverDTO) {
         String emailUsuarioLogado = segurancaUtils.getUsuarioLogadoEmail();
         Usuario usuarioLogado = usuarioRepository.findByEmail(emailUsuarioLogado)
                 .orElseThrow(() -> new TarefaValidacaoException("Usuário logado não encontrado no sistema."));
 
         boolean isMembro = membroRepository.existsByUsuarioIdAndTarefaId(usuarioLogado.getId(), id);
-
         if (!isMembro) {
             throw new TarefaValidacaoException("Acesso negado. Você não é membro desta tarefa para movê-la.");
         }
@@ -235,23 +235,25 @@ public class TarefaService {
                     Lista novaLista = listaRepository.findById(moverDTO.novoListaId())
                             .orElseThrow(() -> new TarefaValidacaoException("Lista de destino não encontrada."));
 
-                    Double novaPosicaoCalculada = calcularNovaPosicao(
-                            moverDTO.posicaoVizinhoAnterior(),
-                            moverDTO.posicaoVizinhoPosterior()
-                    );
-
                     tarefa.setLista(novaLista);
-                    try {
-                        StatusTarefa novoStatus = StatusTarefa.valueOf(novaLista.getNome().toUpperCase().replace(" ", "_"));
-                        tarefa.setStatus(novoStatus);
-                    } catch (IllegalArgumentException e) {
-                        tarefa.setStatus(StatusTarefa.A_FAZER);
-                    }
-                    tarefa.setPosicao(novaPosicaoCalculada);
 
-                    return converterParaDTO(tarefaRepository.save(tarefa));
+                    int novaPosicaoDesejada = moverDTO.novaPosicao().intValue();
+
+                    List<Tarefa> tarefasDaLista = tarefaRepository.findByListaOrderByPosicaoAsc(novaLista);
+
+                    tarefasDaLista.removeIf(t -> t.getId().equals(id));
+                    tarefasDaLista.add(novaPosicaoDesejada, tarefa);
+
+                    for (int i = 0; i < tarefasDaLista.size(); i++) {
+                        tarefasDaLista.get(i).setPosicao((double) i);
+                    }
+
+                    tarefaRepository.saveAll(tarefasDaLista);
+
+                    return converterParaDTO(tarefa);
                 });
     }
+
 
     /**
      * Deleta uma tarefa por ID.

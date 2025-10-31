@@ -130,10 +130,11 @@ public class TarefaController {
                     .orElse(ResponseEntity.notFound().build());
         } catch (TarefaValidacaoException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
-        }catch (Exception e) {
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Excluir tarefa", description = "Remove uma tarefa do sistema")
