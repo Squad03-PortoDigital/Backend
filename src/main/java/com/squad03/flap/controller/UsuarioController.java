@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 @CrossOrigin(origins = "*")
 @Tag(name = "Usuários", description = "Gerenciamento de usuários")
 public class UsuarioController {
-
     private final UsuarioService usuarioService;
     private final PasswordEncoder passwordEncoder;
 
@@ -61,6 +60,35 @@ public class UsuarioController {
                     .body("Erro interno do servidor: " + e.getMessage());
         }
     }
+
+    // ✅ ADICIONE este método no UsuarioController
+    @PutMapping("/me")
+    public ResponseEntity<?> atualizarMeuPerfil(
+            Authentication authentication,
+            @RequestBody UsuarioDTO usuarioDTO
+    ) {
+        try {
+            String email = authentication.getName();
+            Usuario usuario = usuarioService.buscarPorEmail(email)
+                    .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+
+            // ✅ Permite editar nome e foto
+            if (usuarioDTO.getNome() != null && !usuarioDTO.getNome().isBlank()) {
+                usuario.setNome(usuarioDTO.getNome());
+            }
+            if (usuarioDTO.getFoto() != null) {
+                usuario.setFoto(usuarioDTO.getFoto());
+            }
+
+            Usuario atualizado = usuarioRepository.save(usuario);
+            return ResponseEntity.ok(new UsuarioResponseDTO(atualizado));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Erro ao atualizar perfil: " + e.getMessage());
+        }
+    }
+
 
     // ==================== CRUD DE USUÁRIOS ====================
 
