@@ -62,4 +62,5 @@ public class ListaController {
         listaService.excluirLista(id);
         return ResponseEntity.noContent().build();
     }
+
 }

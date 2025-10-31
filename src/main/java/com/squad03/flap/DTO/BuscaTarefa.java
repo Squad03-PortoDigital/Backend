@@ -13,7 +13,7 @@ public record BuscaTarefa(
         String descricao,
         StatusTarefa status,
         PrioridadeTarefa prioridade,
-        Integer posicao,
+        Double posicao,
         LocalDateTime dtCriacao,
         LocalDateTime dtEntrega,
         LocalDateTime dtConclusao,

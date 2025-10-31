@@ -72,7 +72,7 @@ public class Tarefa {
     private PrioridadeTarefa prioridade;
 
     @Column(nullable = false)
-    private Integer posicao;
+    private Double posicao;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime dtCriacao;
@@ -96,7 +96,7 @@ public class Tarefa {
             dtCriacao = LocalDateTime.now();
         }
         if (posicao == null) {
-            posicao = 0;
+            posicao = 0.0;
         }
         if (status == null) {
             status = StatusTarefa.A_FAZER;

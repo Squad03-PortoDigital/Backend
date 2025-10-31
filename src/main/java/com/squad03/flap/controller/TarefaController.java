@@ -57,6 +57,24 @@ public class TarefaController {
         }
     }
 
+    @GetMapping("/lista/{listaId}") // 1. Mapeamento Corrigido
+    @Operation(summary = "Listar tarefas por ID da Lista", description = "Retorna todas as tarefas que pertencem a uma lista específica (coluna Kanban)")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Tarefas retornadas com sucesso"),
+            @ApiResponse(responseCode = "404", description = "Lista não encontrada")
+    })
+    public ResponseEntity<List<BuscaTarefa>> getTarefasPorLista( // 2. Tipo de Retorno Corrigido
+        @Parameter(description = "ID da Lista") @PathVariable Long listaId) {
+        try {
+            List<BuscaTarefa> tarefas = tarefaService.getTarefasPorLista(listaId);
+            return ResponseEntity.ok(tarefas);
+        } catch (TarefaValidacaoException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @PostMapping
     @Operation(summary = "Criar nova tarefa", description = "Cria uma nova tarefa no sistema")
     @ApiResponses({
@@ -105,7 +123,7 @@ public class TarefaController {
     @PreAuthorize("hasAuthority('TAREFA_MOVER')")
     public ResponseEntity<BuscaTarefa> moverTarefa(
             @Parameter(description = "ID da tarefa") @PathVariable Long id,
-            @Parameter(description = "Nova posição e/ou status") @RequestBody MoverTarefaDTO moverDTO) {
+            @Parameter(description = "Nova posição e/ou lista") @RequestBody MoverTarefaDTO moverDTO) {
         try {
             return tarefaService.moverTarefa(id, moverDTO)
                     .map(ResponseEntity::ok)

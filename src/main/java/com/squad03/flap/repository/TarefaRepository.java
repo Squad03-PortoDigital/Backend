@@ -31,12 +31,14 @@ public interface TarefaRepository extends JpaRepository<Tarefa, Long> {
     
     List<Tarefa> findByDtEntregaBeforeAndStatusNot(LocalDateTime data, StatusTarefa status);
 
+    List<Tarefa> findByListaId(Long listaId);
 
 
 
 
-    @Query("SELECT MAX(t.posicao) FROM Tarefa t WHERE t.status = :status")
-    Integer findMaxPosicaoByStatus(@Param("status") StatusTarefa status);
+    // Na interface TarefaRepository.java
+    @Query("SELECT MAX(t.posicao) FROM Tarefa t WHERE t.lista.id = :listaId")
+    Double findMaxPosicaoByListaId(@Param("listaId") Long listaId);
     
     @Query("SELECT t FROM Tarefa t WHERE :tag MEMBER OF t.tags")
     List<Tarefa> findByTag(@Param("tag") String tag);

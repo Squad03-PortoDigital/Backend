@@ -10,14 +10,12 @@ import com.squad03.flap.model.*;
 import com.squad03.flap.model.Tarefa.StatusTarefa;
 import com.squad03.flap.model.Tarefa.PrioridadeTarefa;
 import com.squad03.flap.repository.*;
-import com.squad03.flap.service.MembroService;
 import com.squad03.flap.util.SegurancaUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.ArrayList;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -63,7 +61,7 @@ public class TarefaService {
             // --- PASSO 1: OBTEM O USUÁRIO LOGADO (CRIADOR) ---
             String emailUsuarioLogado = segurancaUtils.getUsuarioLogadoEmail();
             Usuario usuarioCriador = usuarioRepository.findByEmail(emailUsuarioLogado)
-                    .orElseThrow(() -> new RuntimeException("Usuário logado não encontrado no sistema."));
+                    .orElseThrow(() -> new TarefaValidacaoException("Usuário logado não encontrado no sistema.")); // Usando TarefaValidacaoException para 403/400
 
             // --- PASSO 2: BUSCA E VALIDA EMPRESA (OBRIGATÓRIA) ---
             Optional<Empresa> empresaOptional = empresaRepository.findById(cadastroTarefa.empresaId());
@@ -72,50 +70,62 @@ public class TarefaService {
             }
             Empresa empresa = empresaOptional.get();
 
-            // --- PASSO 3: BUSCA LISTA (OPCIONAL) ---
-            // ⭐ CORRIGIDO: Só busca se listaId não for null
-            Lista lista = null;
-            if (cadastroTarefa.listaId() != null) {
-                Optional<Lista> listaOptional = listaRepository.findById(cadastroTarefa.listaId());
-                if (listaOptional.isEmpty()) {
-                    throw new TarefaValidacaoException("Lista não encontrada com ID: " + cadastroTarefa.listaId());
-                }
-                lista = listaOptional.get();
+            // --- PASSO 3: BUSCA E VALIDA LISTA (AGORA OBRIGATÓRIA) ---
+            if (cadastroTarefa.listaId() == null) {
+                throw new TarefaValidacaoException("O ID da Lista (coluna do Kanban) é obrigatório.");
             }
+            Optional<Lista> listaOptional = listaRepository.findById(cadastroTarefa.listaId());
+            if (listaOptional.isEmpty()) {
+                throw new TarefaValidacaoException("Lista não encontrada com ID: " + cadastroTarefa.listaId());
+            }
+            Lista lista = listaOptional.get();
 
-            StatusTarefa statusInicial = StatusTarefa.A_FAZER;
-
-            Integer proximaPosicao = tarefaRepository.findMaxPosicaoByStatus(StatusTarefa.A_FAZER);
+            // Requer que você tenha findMaxPosicaoByStatus no TarefaRepository
+            Double proximaPosicao = tarefaRepository.findMaxPosicaoByListaId(lista.getId());
             if (proximaPosicao == null) {
-                proximaPosicao = 0;
+                proximaPosicao = 0.0;
             } else {
-                proximaPosicao++;
+                proximaPosicao = proximaPosicao + 1.0;
             }
 
+            StatusTarefa statusDerivado;
+            try {
+                // Se o nome da lista for "Em Progresso", o status será EM_PROGRESSO
+                statusDerivado = StatusTarefa.valueOf(lista.getNome().toUpperCase().replace(" ", "_"));
+            } catch (IllegalArgumentException e) {
+                // Se o nome for customizado ("Lista do Leo"), usa um default seguro
+                statusDerivado = StatusTarefa.A_FAZER;
+            }
+
+            // --- PASSO 5: CRIAÇÃO E SALVAMENTO DA TAREFA ---
             Tarefa novaTarefa = Tarefa.builder()
                     .empresa(empresa)
-                    .lista(lista) // ⭐ Pode ser null agora
+                    .lista(lista)
                     .titulo(cadastroTarefa.titulo())
                     .descricao(cadastroTarefa.descricao())
                     .prioridade(cadastroTarefa.prioridade() != null ? cadastroTarefa.prioridade() : PrioridadeTarefa.MEDIA)
                     .dtEntrega(cadastroTarefa.dtEntrega())
                     .tags(cadastroTarefa.tags() != null ? cadastroTarefa.tags() : new ArrayList<>())
                     .observacoes(cadastroTarefa.observacoes())
-                    .status(statusInicial)
+                    .status(statusDerivado)
                     .posicao(proximaPosicao)
                     .build();
 
             Tarefa tarefaSalva = tarefaRepository.save(novaTarefa);
 
+            // --- PASSO 6: ADICIONAR CRIADOR COMO MEMBRO ---
             MembroCreateDTO membroDTO = new MembroCreateDTO();
             membroDTO.setUsuarioId(usuarioCriador.getId());
             membroDTO.setTarefaId(tarefaSalva.getId());
-
             membroService.criarMembro(membroDTO);
 
             return converterParaDTO(tarefaSalva);
 
+        } catch (TarefaValidacaoException e) {
+            // Relança a exceção de validação para o Controller
+            throw new RuntimeException(e.getMessage(), e);
         } catch (Exception e) {
+            // Outros erros (DB, I/O)
             throw new RuntimeException("Erro ao criar tarefa: " + e.getMessage(), e);
         }
     }
@@ -186,6 +196,23 @@ public class TarefaService {
         }
     }
 
+    private Double calcularNovaPosicao(Double anterior, Double posterior) {
+        double posAnterior = (anterior != null) ? anterior : 0.0;
+
+        if (posAnterior == 0.0 && posterior == null) {
+            return 1.0;
+        }
+        if (posAnterior == 0.0 && posterior != null) {
+            return posterior / 2.0;
+        }
+
+        if (posterior == null) {
+            return anterior + 1000.0;
+        }
+
+        return (posAnterior + posterior) / 2.0;
+    }
+
     /**
      * Move uma tarefa, atualizando sua posição e/ou status.
      * @param id O ID da tarefa.
@@ -205,12 +232,23 @@ public class TarefaService {
 
         return tarefaRepository.findById(id)
                 .map(tarefa -> {
-                    if (moverDTO.novoStatus() != null) {
-                        tarefa.setStatus(moverDTO.novoStatus());
+                    Lista novaLista = listaRepository.findById(moverDTO.novoListaId())
+                            .orElseThrow(() -> new TarefaValidacaoException("Lista de destino não encontrada."));
+
+                    Double novaPosicaoCalculada = calcularNovaPosicao(
+                            moverDTO.posicaoVizinhoAnterior(),
+                            moverDTO.posicaoVizinhoPosterior()
+                    );
+
+                    tarefa.setLista(novaLista);
+                    try {
+                        StatusTarefa novoStatus = StatusTarefa.valueOf(novaLista.getNome().toUpperCase().replace(" ", "_"));
+                        tarefa.setStatus(novoStatus);
+                    } catch (IllegalArgumentException e) {
+                        tarefa.setStatus(StatusTarefa.A_FAZER);
                     }
-                    if (moverDTO.novaPosicao() != null) {
-                        tarefa.setPosicao(moverDTO.novaPosicao());
-                    }
+                    tarefa.setPosicao(novaPosicaoCalculada);
+
                     return converterParaDTO(tarefaRepository.save(tarefa));
                 });
     }
@@ -425,5 +463,25 @@ public class TarefaService {
                             tarefa.getObservacoes()
                     );
                 });
+    }
+
+    public List<BuscaTarefa> getTarefasPorLista(Long listaId) {
+        try {
+            // 1. Validação: Checa se a Lista existe.
+            if (!listaRepository.existsById(listaId)) {
+                throw new TarefaValidacaoException("Lista não encontrada com ID: " + listaId);
+            }
+
+            // 2. Busca as tarefas por ListaId no repositório
+            return tarefaRepository.findByListaId(listaId).stream()
+                    .map(this::converterParaDTO)
+                    .toList();
+
+        } catch (TarefaValidacaoException e) {
+            // Relança a exceção para que o Controller retorne 404
+            throw new RuntimeException(e.getMessage(), e);
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao buscar tarefas por lista: " + e.getMessage(), e);
+        }
     }
 }
