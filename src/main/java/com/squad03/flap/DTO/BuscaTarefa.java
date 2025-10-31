@@ -8,6 +8,7 @@ import java.util.List;
 public record BuscaTarefa(
         Long id,
         Long empresaId,
+        String empresa,          // ✅ NOME DA EMPRESA
         Long listaId,
         String titulo,
         String descricao,
@@ -18,5 +19,8 @@ public record BuscaTarefa(
         LocalDateTime dtEntrega,
         LocalDateTime dtConclusao,
         List<String> tags,
-        String observacoes
+        String observacoes,
+        List<Long> membroIds,    // ✅ IDs DOS MEMBROS (tabela membro)
+        List<Long> usuarioIds,   // ✅ IDs DOS USUÁRIOS (para filtro)
+        List<MembroSimplificadoDTO> membros // ✅ DETALHES COMPLETOS
 ) {}

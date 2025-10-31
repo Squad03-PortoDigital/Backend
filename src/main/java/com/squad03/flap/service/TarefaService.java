@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -53,24 +54,19 @@ public class TarefaService {
 
     /**
      * Cria uma nova tarefa, buscando as entidades relacionadas e validando os dados.
-     * @param cadastroTarefa O DTO com os dados da tarefa a ser criada.
-     * @return O DTO da tarefa salva.
      */
     public BuscaTarefa criarTarefa(CadastroTarefa cadastroTarefa) {
         try {
-            // --- PASSO 1: OBTEM O USUÁRIO LOGADO (CRIADOR) ---
             String emailUsuarioLogado = segurancaUtils.getUsuarioLogadoEmail();
             Usuario usuarioCriador = usuarioRepository.findByEmail(emailUsuarioLogado)
-                    .orElseThrow(() -> new TarefaValidacaoException("Usuário logado não encontrado no sistema.")); // Usando TarefaValidacaoException para 403/400
+                    .orElseThrow(() -> new TarefaValidacaoException("Usuário logado não encontrado no sistema."));
 
-            // --- PASSO 2: BUSCA E VALIDA EMPRESA (OBRIGATÓRIA) ---
             Optional<Empresa> empresaOptional = empresaRepository.findById(cadastroTarefa.empresaId());
             if (empresaOptional.isEmpty()) {
                 throw new TarefaValidacaoException("Empresa não encontrada com ID: " + cadastroTarefa.empresaId());
             }
             Empresa empresa = empresaOptional.get();
 
-            // --- PASSO 3: BUSCA E VALIDA LISTA (AGORA OBRIGATÓRIA) ---
             if (cadastroTarefa.listaId() == null) {
                 throw new TarefaValidacaoException("O ID da Lista (coluna do Kanban) é obrigatório.");
             }
@@ -80,7 +76,6 @@ public class TarefaService {
             }
             Lista lista = listaOptional.get();
 
-            // Requer que você tenha findMaxPosicaoByStatus no TarefaRepository
             Double proximaPosicao = tarefaRepository.findMaxPosicaoByListaId(lista.getId());
             if (proximaPosicao == null) {
                 proximaPosicao = 0.0;
@@ -90,14 +85,11 @@ public class TarefaService {
 
             StatusTarefa statusDerivado;
             try {
-                // Se o nome da lista for "Em Progresso", o status será EM_PROGRESSO
                 statusDerivado = StatusTarefa.valueOf(lista.getNome().toUpperCase().replace(" ", "_"));
             } catch (IllegalArgumentException e) {
-                // Se o nome for customizado ("Lista do Leo"), usa um default seguro
                 statusDerivado = StatusTarefa.A_FAZER;
             }
 
-            // --- PASSO 5: CRIAÇÃO E SALVAMENTO DA TAREFA ---
             Tarefa novaTarefa = Tarefa.builder()
                     .empresa(empresa)
                     .lista(lista)
@@ -113,7 +105,6 @@ public class TarefaService {
 
             Tarefa tarefaSalva = tarefaRepository.save(novaTarefa);
 
-            // --- PASSO 6: ADICIONAR CRIADOR COMO MEMBRO ---
             MembroCreateDTO membroDTO = new MembroCreateDTO();
             membroDTO.setUsuarioId(usuarioCriador.getId());
             membroDTO.setTarefaId(tarefaSalva.getId());
@@ -122,18 +113,12 @@ public class TarefaService {
             return converterParaDTO(tarefaSalva);
 
         } catch (TarefaValidacaoException e) {
-            // Relança a exceção de validação para o Controller
             throw new RuntimeException(e.getMessage(), e);
         } catch (Exception e) {
-            // Outros erros (DB, I/O)
             throw new RuntimeException("Erro ao criar tarefa: " + e.getMessage(), e);
         }
     }
 
-    /**
-     * Busca todas as tarefas.
-     * @return Uma lista de DTOs de busca de tarefa.
-     */
     public List<BuscaTarefa> getAllTarefas() {
         try {
             return tarefaRepository.findAll().stream()
@@ -144,11 +129,6 @@ public class TarefaService {
         }
     }
 
-    /**
-     * Busca uma tarefa por ID.
-     * @param id O ID da tarefa.
-     * @return Um DTO de busca de tarefa, se encontrado.
-     */
     public Optional<BuscaTarefa> getTarefaById(Long id) {
         try {
             return tarefaRepository.findById(id)
@@ -158,12 +138,6 @@ public class TarefaService {
         }
     }
 
-    /**
-     * Atualiza uma tarefa existente no banco de dados.
-     * @param id O ID da tarefa a ser atualizada.
-     * @param atualizarDTO Um DTO com os novos dados.
-     * @return O DTO com os dados da tarefa atualizada.
-     */
     public Optional<BuscaTarefa> atualizarTarefa(Long id, AtualizacaoTarefa atualizarDTO) {
         try {
             return tarefaRepository.findById(id)
@@ -196,29 +170,6 @@ public class TarefaService {
         }
     }
 
-    private Double calcularNovaPosicao(Double anterior, Double posterior) {
-        double posAnterior = (anterior != null) ? anterior : 0.0;
-
-        if (posAnterior == 0.0 && posterior == null) {
-            return 1.0;
-        }
-        if (posAnterior == 0.0 && posterior != null) {
-            return posterior / 2.0;
-        }
-
-        if (posterior == null) {
-            return anterior + 1000.0;
-        }
-
-        return (posAnterior + posterior) / 2.0;
-    }
-
-    /**
-     * Move uma tarefa, atualizando sua posição e/ou status.
-     * @param id O ID da tarefa.
-     * @param moverDTO O DTO com a nova posição e status.
-     * @return O DTO da tarefa movida.
-     */
     @Transactional
     public Optional<BuscaTarefa> moverTarefa(Long id, MoverTarefaDTO moverDTO) {
         String emailUsuarioLogado = segurancaUtils.getUsuarioLogadoEmail();
@@ -254,12 +205,6 @@ public class TarefaService {
                 });
     }
 
-
-    /**
-     * Deleta uma tarefa por ID.
-     * @param id O ID da tarefa a ser deletada.
-     * @return true se a tarefa foi deletada, false caso contrário.
-     */
     public boolean deletarTarefa(Long id) {
         try {
             if (tarefaRepository.existsById(id)) {
@@ -272,11 +217,6 @@ public class TarefaService {
         }
     }
 
-    /**
-     * Busca tarefas por status.
-     * @param status O status da tarefa.
-     * @return Uma lista de DTOs de tarefas.
-     */
     public List<BuscaTarefa> getTarefasPorStatus(StatusTarefa status) {
         try {
             return tarefaRepository.findByStatusOrderByPosicaoAsc(status).stream()
@@ -287,11 +227,6 @@ public class TarefaService {
         }
     }
 
-    /**
-     * Busca tarefas por prioridade.
-     * @param prioridade A prioridade da tarefa.
-     * @return Uma lista de DTOs de tarefas.
-     */
     public List<BuscaTarefa> getTarefasPorPrioridade(PrioridadeTarefa prioridade) {
         try {
             return tarefaRepository.findByPrioridade(prioridade).stream()
@@ -302,11 +237,6 @@ public class TarefaService {
         }
     }
 
-    /**
-     * Busca tarefas por título.
-     * @param titulo O título para buscar.
-     * @return Uma lista de DTOs de tarefas.
-     */
     public List<BuscaTarefa> buscarTarefasPorTitulo(String titulo) {
         try {
             return tarefaRepository.findByTituloContainingIgnoreCase(titulo).stream()
@@ -317,11 +247,6 @@ public class TarefaService {
         }
     }
 
-    /**
-     * Busca tarefas por descrição.
-     * @param descricao A descrição para buscar.
-     * @return Uma lista de DTOs de tarefas.
-     */
     public List<BuscaTarefa> buscarTarefasPorDescricao(String descricao) {
         try {
             return tarefaRepository.findByDescricaoContainingIgnoreCase(descricao).stream()
@@ -332,10 +257,6 @@ public class TarefaService {
         }
     }
 
-    /**
-     * Busca tarefas atrasadas.
-     * @return Uma lista de DTOs de tarefas atrasadas.
-     */
     public List<BuscaTarefa> getTarefasAtrasadas() {
         try {
             return tarefaRepository.findTarefasAtrasadas().stream()
@@ -346,11 +267,6 @@ public class TarefaService {
         }
     }
 
-    /**
-     * Busca tarefas por tag.
-     * @param tag A tag para filtrar.
-     * @return Uma lista de DTOs de tarefas.
-     */
     public List<BuscaTarefa> getTarefasPorTag(String tag) {
         try {
             return tarefaRepository.findByTag(tag).stream()
@@ -361,12 +277,6 @@ public class TarefaService {
         }
     }
 
-    /**
-     * Busca tarefas por período de entrega.
-     * @param dataInicio A data de início do período.
-     * @param dataFim A data de fim do período.
-     * @return Uma lista de DTOs de tarefas.
-     */
     public List<BuscaTarefa> getTarefasPorPeriodo(LocalDateTime dataInicio, LocalDateTime dataFim) {
         try {
             return tarefaRepository.findByDtEntregaBetween(dataInicio, dataFim).stream()
@@ -377,11 +287,6 @@ public class TarefaService {
         }
     }
 
-    /**
-     * Busca os anexos de uma tarefa específica.
-     * @param tarefaId O ID da tarefa.
-     * @return Uma lista de DTOs de Anexo.
-     */
     public List<BuscaAnexo> getAnexosPorTarefa(Long tarefaId) {
         try {
             return anexoRepository.findByTarefaId(tarefaId).stream()
@@ -397,7 +302,7 @@ public class TarefaService {
         }
     }
 
-    public List<BuscaTarefa> getTarefasPorEmpresa(Long empresaId){
+    public List<BuscaTarefa> getTarefasPorEmpresa(Long empresaId) {
         if (!empresaRepository.existsById(empresaId)) {
             throw new TarefaValidacaoException("Empresa não encontrada com ID: " + empresaId);
         }
@@ -407,11 +312,54 @@ public class TarefaService {
                 .toList();
     }
 
+    public List<BuscaTarefa> getTarefasPorLista(Long listaId) {
+        try {
+            if (!listaRepository.existsById(listaId)) {
+                throw new TarefaValidacaoException("Lista não encontrada com ID: " + listaId);
+            }
+
+            return tarefaRepository.findByListaId(listaId).stream()
+                    .map(this::converterParaDTO)
+                    .toList();
+
+        } catch (TarefaValidacaoException e) {
+            throw new RuntimeException(e.getMessage(), e);
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao buscar tarefas por lista: " + e.getMessage(), e);
+        }
+    }
+
+    // ✅ MÉTODO ATUALIZADO - CONVERTE TAREFA PARA BUSCATAREFA
     private BuscaTarefa converterParaDTO(Tarefa tarefa) {
         try {
+            // ✅ Buscar membros da tarefa
+            List<Membro> membros = membroRepository.findByTarefaId(tarefa.getId());
+
+            // ✅ Extrair IDs dos membros (tabela membro)
+            List<Long> membroIds = membros.stream()
+                    .map(Membro::getId)
+                    .collect(Collectors.toList());
+
+            // ✅ Extrair IDs dos usuários (para filtro)
+            List<Long> usuarioIds = membros.stream()
+                    .map(membro -> membro.getUsuario().getId())
+                    .collect(Collectors.toList());
+
+            // ✅ Criar lista de MembroSimplificadoDTO
+            List<MembroSimplificadoDTO> membrosDTO = membros.stream()
+                    .map(membro -> new MembroSimplificadoDTO(
+                            membro.getId(),
+                            membro.getUsuario().getId(),
+                            membro.getUsuario().getNome(),
+                            membro.getUsuario().getEmail(),
+                            membro.getUsuario().getFoto()
+                    ))
+                    .collect(Collectors.toList());
+
             return new BuscaTarefa(
                     tarefa.getId(),
                     tarefa.getEmpresa() != null ? tarefa.getEmpresa().getId() : null,
+                    tarefa.getEmpresa() != null ? tarefa.getEmpresa().getNome() : null, // ✅ NOME DA EMPRESA
                     tarefa.getLista() != null ? tarefa.getLista().getId() : null,
                     tarefa.getTitulo(),
                     tarefa.getDescricao(),
@@ -421,14 +369,18 @@ public class TarefaService {
                     tarefa.getDtCriacao(),
                     tarefa.getDtEntrega(),
                     tarefa.getDtConclusao(),
-                    tarefa.getTags() != null ? tarefa.getTags() : new ArrayList<String>(),
-                    tarefa.getObservacoes()
+                    tarefa.getTags() != null ? tarefa.getTags() : new ArrayList<>(),
+                    tarefa.getObservacoes(),
+                    membroIds,     // ✅ IDs DOS MEMBROS
+                    usuarioIds,    // ✅ IDs DOS USUÁRIOS (PARA FILTRO)
+                    membrosDTO     // ✅ DETALHES DOS MEMBROS
             );
         } catch (Exception e) {
             throw new RuntimeException("Erro ao converter tarefa para DTO: " + e.getMessage(), e);
         }
     }
 
+    // ✅ MÉTODO ATUALIZADO - DETALHAR TAREFA
     public Optional<DetalheTarefa> detalharTarefa(Long id) {
         return tarefaRepository.findById(id)
                 .map(tarefa -> {
@@ -446,9 +398,23 @@ public class TarefaService {
 
                     List<ComentarioResponseDTO> comentariosDTO = comentarioService.buscarPorTarefa(tarefa.getId());
 
+                    // ✅ Buscar membros
+                    List<Membro> membros = membroRepository.findByTarefaId(tarefa.getId());
+                    List<MembroSimplificadoDTO> membrosDTO = membros.stream()
+                            .map(membro -> new MembroSimplificadoDTO(
+                                    membro.getId(),
+                                    membro.getUsuario().getId(),
+                                    membro.getUsuario().getNome(),
+                                    membro.getUsuario().getEmail(),
+                                    membro.getUsuario().getFoto()
+                            ))
+                            .collect(Collectors.toList());
+
                     return new DetalheTarefa(
                             tarefa.getId(),
                             tarefa.getEmpresa() != null ? tarefa.getEmpresa().getId() : null,
+                            tarefa.getEmpresa() != null ? tarefa.getEmpresa().getNome() : null, // ✅ NOME DA EMPRESA
+                            tarefa.getLista() != null ? tarefa.getLista().getId() : null,
                             tarefa.getTitulo(),
                             tarefa.getDescricao(),
                             tarefa.getStatus(),
@@ -461,29 +427,10 @@ public class TarefaService {
                             anexosDTO,
                             checklistsDTO,
                             comentariosDTO,
-                            null,
+                            membrosDTO,  // ✅ MEMBROS
+                            null,        // historico
                             tarefa.getObservacoes()
                     );
                 });
-    }
-
-    public List<BuscaTarefa> getTarefasPorLista(Long listaId) {
-        try {
-            // 1. Validação: Checa se a Lista existe.
-            if (!listaRepository.existsById(listaId)) {
-                throw new TarefaValidacaoException("Lista não encontrada com ID: " + listaId);
-            }
-
-            // 2. Busca as tarefas por ListaId no repositório
-            return tarefaRepository.findByListaId(listaId).stream()
-                    .map(this::converterParaDTO)
-                    .toList();
-
-        } catch (TarefaValidacaoException e) {
-            // Relança a exceção para que o Controller retorne 404
-            throw new RuntimeException(e.getMessage(), e);
-        } catch (Exception e) {
-            throw new RuntimeException("Erro ao buscar tarefas por lista: " + e.getMessage(), e);
-        }
     }
 }
