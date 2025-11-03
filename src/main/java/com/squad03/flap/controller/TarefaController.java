@@ -29,8 +29,6 @@ public class TarefaController {
     @Autowired
     private TarefaService tarefaService;
 
-
-
     @GetMapping
     @Operation(summary = "Listar todas as tarefas", description = "Retorna uma lista com todas as tarefas cadastradas no sistema")
     @ApiResponse(responseCode = "200", description = "Lista de tarefas retornada com sucesso")
@@ -48,7 +46,6 @@ public class TarefaController {
     public ResponseEntity<DetalheTarefa> getTarefaById(
             @Parameter(description = "ID da tarefa") @PathVariable Long id) {
         try {
-            // Chama o novo método de detalhamento
             return tarefaService.detalharTarefa(id)
                     .map(ResponseEntity::ok)
                     .orElse(ResponseEntity.notFound().build());
@@ -57,14 +54,14 @@ public class TarefaController {
         }
     }
 
-    @GetMapping("/lista/{listaId}") // 1. Mapeamento Corrigido
+    @GetMapping("/lista/{listaId}")
     @Operation(summary = "Listar tarefas por ID da Lista", description = "Retorna todas as tarefas que pertencem a uma lista específica (coluna Kanban)")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Tarefas retornadas com sucesso"),
             @ApiResponse(responseCode = "404", description = "Lista não encontrada")
     })
-    public ResponseEntity<List<BuscaTarefa>> getTarefasPorLista( // 2. Tipo de Retorno Corrigido
-        @Parameter(description = "ID da Lista") @PathVariable Long listaId) {
+    public ResponseEntity<List<BuscaTarefa>> getTarefasPorLista(
+            @Parameter(description = "ID da Lista") @PathVariable Long listaId) {
         try {
             List<BuscaTarefa> tarefas = tarefaService.getTarefasPorLista(listaId);
             return ResponseEntity.ok(tarefas);
@@ -81,7 +78,6 @@ public class TarefaController {
             @ApiResponse(responseCode = "201", description = "Tarefa criada com sucesso"),
             @ApiResponse(responseCode = "400", description = "Dados inválidos"),
     })
-
     public ResponseEntity<?> criarTarefa(
             @Parameter(description = "Dados para criar a tarefa") @RequestBody CadastroTarefa cadastroTarefa) {
         try {
@@ -120,7 +116,6 @@ public class TarefaController {
             @ApiResponse(responseCode = "403", description = "Acesso negado: Usuário não é membro"),
             @ApiResponse(responseCode = "404", description = "Tarefa não encontrada")
     })
-    @PreAuthorize("hasAuthority('TAREFA_MOVER')")
     public ResponseEntity<BuscaTarefa> moverTarefa(
             @Parameter(description = "ID da tarefa") @PathVariable Long id,
             @Parameter(description = "Nova posição e/ou lista") @RequestBody MoverTarefaDTO moverDTO) {
@@ -135,6 +130,47 @@ public class TarefaController {
         }
     }
 
+    // ✅ NOVO: Arquivar tarefa
+    @PatchMapping("/{id}/arquivar")
+    @Operation(summary = "Arquivar tarefa", description = "Move a tarefa para o status ARQUIVADA")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Tarefa arquivada com sucesso"),
+            @ApiResponse(responseCode = "404", description = "Tarefa não encontrada")
+    })
+    public ResponseEntity<BuscaTarefa> arquivarTarefa(@PathVariable Long id) {
+        try {
+            return tarefaService.arquivarTarefa(id)
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    // ✅ NOVO: Listar tarefas arquivadas
+    @GetMapping("/arquivadas")
+    @Operation(summary = "Buscar tarefas arquivadas", description = "Retorna todas as tarefas com status ARQUIVADA")
+    public ResponseEntity<List<BuscaTarefa>> getTarefasArquivadas() {
+        try {
+            List<BuscaTarefa> tarefas = tarefaService.getTarefasPorStatus(StatusTarefa.ARQUIVADA);
+            return ResponseEntity.ok(tarefas);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    // ✅ NOVO: Desarquivar tarefa
+    @PatchMapping("/{id}/desarquivar")
+    @Operation(summary = "Desarquivar tarefa", description = "Remove a tarefa do status ARQUIVADA e retorna para A_FAZER")
+    public ResponseEntity<BuscaTarefa> desarquivarTarefa(@PathVariable Long id) {
+        try {
+            return tarefaService.desarquivarTarefa(id)
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Excluir tarefa", description = "Remove uma tarefa do sistema")

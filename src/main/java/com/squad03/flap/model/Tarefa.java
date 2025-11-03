@@ -25,34 +25,28 @@ public class Tarefa {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ⭐ CORRIGIDO: Adicionado JsonIgnoreProperties para evitar lazy loading error
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "empresa_id", nullable = false)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Empresa empresa;
 
-    // ⭐ CORRIGIDO: Adicionado JsonIgnoreProperties
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lista_id", nullable = true) // ⭐ Mudado para nullable=true
+    @JoinColumn(name = "lista_id", nullable = true)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Lista lista;
 
-    // ⭐ CORRIGIDO: Adicionado JsonIgnoreProperties para evitar serialização circular
     @OneToMany(mappedBy = "tarefa", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties({"tarefa"})
     private Set<Anexo> anexos = new HashSet<>();
 
-    // ⭐ CORRIGIDO: Adicionado JsonIgnoreProperties
     @OneToMany(mappedBy = "tarefa", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties({"tarefa"})
     private Set<Checklist> checklists = new HashSet<>();
 
-    // ⭐ CORRIGIDO: Adicionado JsonIgnoreProperties
     @OneToMany(mappedBy = "tarefa", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties({"tarefa"})
     private Set<Comentario> comentarios = new HashSet<>();
 
-    // ⭐ CORRIGIDO: Adicionado JsonIgnoreProperties
     @OneToMany(mappedBy = "tarefa", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties({"tarefa"})
     private Set<Membro> membros = new HashSet<>();
@@ -81,8 +75,7 @@ public class Tarefa {
 
     private LocalDateTime dtConclusao;
 
-    // ⭐ CORRIGIDO: Tags agora é um ElementCollection, não causa lazy loading error
-    @ElementCollection(fetch = FetchType.EAGER) // ⭐ EAGER para carregar imediatamente
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "tarefa_tags", joinColumns = @JoinColumn(name = "tarefa_id"))
     @Column(name = "tag")
     private List<String> tags;
@@ -113,12 +106,14 @@ public class Tarefa {
         }
     }
 
+    // ✅ ENUM ATUALIZADO COM ARQUIVADA
     public enum StatusTarefa {
         A_FAZER("A Fazer"),
         EM_PROGRESSO("Em Progresso"),
         EM_REVISAO("Em Revisão"),
         CONCLUIDA("Concluída"),
-        CANCELADA("Cancelada");
+        CANCELADA("Cancelada"),
+        ARQUIVADA("Arquivada");  // ✅ ADICIONADO
 
         private final String descricao;
 

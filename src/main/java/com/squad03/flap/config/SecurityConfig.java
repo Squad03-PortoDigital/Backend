@@ -30,11 +30,9 @@ public class SecurityConfig {
     @Autowired
     private DetalhesUsuarioServiceImpl detalhesUsuarioService;
 
-    // --- 1. ENCODER E PROVIDER ---
-
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(); // Define o BCrypt como o único encoder
+        return new BCryptPasswordEncoder();
     }
 
     @Bean
@@ -45,31 +43,56 @@ public class SecurityConfig {
         return authProvider;
     }
 
-    // --- 2. SECURITY FILTER CHAIN (REGRAS) ---
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable()) // Desativado para facilitar testes de API
-
-                // MODO SESSÃO (STATEFUL)
+                .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 
-                // AUTORIZAÇÃO DE REQUISIÇÕES
                 .authorizeHttpRequests(auth -> auth
-                        // Rotas públicas (Cadastro e Documentação)
+                        // Rotas públicas
                         .requestMatchers(HttpMethod.POST, "/usuarios/cadastro").permitAll()
                         .requestMatchers(HttpMethod.POST, "/usuarios/login").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/cargos").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/roles").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/cargos", "/roles").permitAll()
 
-                        // Todas as outras rotas exigem autenticação
+                        // Rotas autenticadas
+                        .requestMatchers(HttpMethod.GET, "/usuarios/me").authenticated()
+
+                        // ✅ ADICIONAR: Operações de arquivamento (ANTES das rotas gerais de tarefas)
+                        .requestMatchers(HttpMethod.GET, "/tarefas/arquivadas").authenticated()
+                        .requestMatchers(HttpMethod.PATCH, "/tarefas/*/arquivar").authenticated()
+                        .requestMatchers(HttpMethod.PATCH, "/tarefas/*/desarquivar").authenticated()
+
+                        // Operações em tarefas
+                        .requestMatchers(HttpMethod.GET, "/tarefas/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/tarefas").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/tarefas/**").authenticated()
+                        .requestMatchers(HttpMethod.PATCH, "/tarefas/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/tarefas/**").authenticated()
+
+                        // Operações em listas
+                        .requestMatchers(HttpMethod.GET, "/listas/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/listas").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/listas/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/listas/**").authenticated()
+
+                        // Empresas
+                        .requestMatchers(HttpMethod.GET, "/empresas/**").authenticated()
+
+                        // ✅ Usar hasRole() - Spring adiciona prefixo ROLE_ automaticamente
+                        .requestMatchers(HttpMethod.GET, "/usuarios").hasRole("ADMINISTRADOR_MASTER")
+
+                        // Operações individuais em usuários
+                        .requestMatchers(HttpMethod.GET, "/usuarios/**").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/usuarios/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/usuarios/**").hasRole("ADMINISTRADOR_MASTER")
+
+                        // Todas as outras rotas
                         .anyRequest().authenticated()
                 )
 
-                // CONFIGURAÇÃO DO FORM LOGIN
                 .formLogin(form -> form
                         .loginProcessingUrl("/usuarios/login")
                         .usernameParameter("email")
@@ -83,7 +106,6 @@ public class SecurityConfig {
                         .permitAll()
                 )
 
-                // CONFIGURAÇÃO DE LOGOUT
                 .logout(logout -> logout
                         .logoutUrl("/usuarios/logout")
                         .logoutSuccessHandler((request, response, authentication) -> {
@@ -91,6 +113,8 @@ public class SecurityConfig {
                             response.setContentType("application/json");
                             response.getWriter().write("{\"message\": \"Logout realizado com sucesso\"}");
                         })
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID")
                         .permitAll()
                 )
 
@@ -99,18 +123,10 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // --- 3. CONFIGURAÇÃO CORS (CORRIGIDA) ---
-
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-
-        // ✅ USAR allowedOriginPatterns com wildcard quando allowCredentials = true
         configuration.setAllowedOriginPatterns(List.of("*"));
-
-        // ❌ REMOVIDO: não usar allowedOrigins("*") com credentials
-        // configuration.setAllowedOrigins(List.of("*")); // <-- ESSA LINHA CAUSAVA O ERRO
-
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
@@ -119,8 +135,6 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
-
-    // --- 4. SUCCESS HANDLER ---
 
     @Bean
     public AuthenticationSuccessHandler authenticationSuccessHandler() {

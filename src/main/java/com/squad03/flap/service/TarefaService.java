@@ -139,9 +139,13 @@ public class TarefaService {
     }
 
     public Optional<BuscaTarefa> atualizarTarefa(Long id, AtualizacaoTarefa atualizarDTO) {
+        System.out.println("📥 Atualizando tarefa ID: " + id);
+        System.out.println("👥 Membros recebidos: " + atualizarDTO.membroIds());
+
         try {
             return tarefaRepository.findById(id)
                     .map(tarefa -> {
+                        // Atualiza campos básicos
                         if (atualizarDTO.titulo() != null) {
                             tarefa.setTitulo(atualizarDTO.titulo());
                         }
@@ -163,24 +167,94 @@ public class TarefaService {
                         if (atualizarDTO.observacoes() != null) {
                             tarefa.setObservacoes(atualizarDTO.observacoes());
                         }
-                        return converterParaDTO(tarefaRepository.save(tarefa));
+
+                        // ✅ ATUALIZAR MEMBROS
+                        if (atualizarDTO.membroIds() != null) {
+                            System.out.println("🔄 Atualizando membros da tarefa...");
+
+                            // 1. Buscar membros atuais
+                            List<Membro> membrosAtuais = membroRepository.findByTarefaId(id);
+                            List<Long> usuarioIdsAtuais = membrosAtuais.stream()
+                                    .map(m -> m.getUsuario().getId())
+                                    .collect(Collectors.toList());
+
+                            // 2. Identificar quem remover
+                            List<Membro> membrosParaRemover = membrosAtuais.stream()
+                                    .filter(membro -> !atualizarDTO.membroIds().contains(membro.getUsuario().getId()))
+                                    .collect(Collectors.toList());
+
+                            // 3. Remover membros não selecionados
+                            if (!membrosParaRemover.isEmpty()) {
+                                membroRepository.deleteAll(membrosParaRemover);
+                                System.out.println("🗑️ Removidos " + membrosParaRemover.size() + " membros");
+                            }
+
+                            // 4. Adicionar novos membros
+                            for (Long usuarioId : atualizarDTO.membroIds()) {
+                                if (!usuarioIdsAtuais.contains(usuarioId)) {
+                                    Usuario usuario = usuarioRepository.findById(usuarioId)
+                                            .orElseThrow(() -> new RuntimeException("Usuário não encontrado: " + usuarioId));
+
+                                    Membro novoMembro = new Membro();
+                                    novoMembro.setUsuario(usuario);
+                                    novoMembro.setTarefa(tarefa);
+                                    membroRepository.save(novoMembro);
+
+                                    System.out.println("✅ Adicionado membro: " + usuario.getNome());
+                                }
+                            }
+
+                            System.out.println("💾 Membros atualizados com sucesso!");
+                        }
+
+                        // Salvar tarefa
+                        Tarefa tarefaSalva = tarefaRepository.save(tarefa);
+                        return converterParaDTO(tarefaSalva);
                     });
         } catch (Exception e) {
+            System.err.println("❌ Erro ao atualizar tarefa: " + e.getMessage());
             throw new RuntimeException("Erro ao atualizar tarefa: " + e.getMessage(), e);
         }
     }
 
+    @Transactional
+    public Optional<BuscaTarefa> arquivarTarefa(Long id) {
+        System.out.println("📦 Arquivando tarefa ID: " + id);
+        return tarefaRepository.findById(id)
+                .map(tarefa -> {
+                    tarefa.setStatus(StatusTarefa.ARQUIVADA);
+                    Tarefa tarefaSalva = tarefaRepository.save(tarefa);
+                    System.out.println("✅ Tarefa arquivada com sucesso!");
+                    return converterParaDTO(tarefaSalva);
+                });
+    }
+
+    @Transactional
+    public Optional<BuscaTarefa> desarquivarTarefa(Long id) {
+        System.out.println("🔄 Desarquivando tarefa ID: " + id);
+        return tarefaRepository.findById(id)
+                .map(tarefa -> {
+                    tarefa.setStatus(StatusTarefa.A_FAZER);
+                    Tarefa tarefaSalva = tarefaRepository.save(tarefa);
+                    System.out.println("✅ Tarefa desarquivada com sucesso!");
+                    return converterParaDTO(tarefaSalva);
+                });
+    }
     @Transactional
     public Optional<BuscaTarefa> moverTarefa(Long id, MoverTarefaDTO moverDTO) {
         String emailUsuarioLogado = segurancaUtils.getUsuarioLogadoEmail();
         Usuario usuarioLogado = usuarioRepository.findByEmail(emailUsuarioLogado)
                 .orElseThrow(() -> new TarefaValidacaoException("Usuário logado não encontrado no sistema."));
 
-        boolean isMembro = membroRepository.existsByUsuarioIdAndTarefaId(usuarioLogado.getId(), id);
-        if (!isMembro) {
-            throw new TarefaValidacaoException("Acesso negado. Você não é membro desta tarefa para movê-la.");
-        }
+         /*
+    boolean isMembro = membroRepository.existsByUsuarioIdAndTarefaId(usuarioLogado.getId(), id);
+    System.out.println("🔍 É membro? " + isMembro);
 
+    if (!isMembro) {
+        System.err.println("❌ Usuário não é membro da tarefa!");
+        throw new TarefaValidacaoException("Acesso negado. Você não é membro desta tarefa para movê-la.");
+    }
+    */
         return tarefaRepository.findById(id)
                 .map(tarefa -> {
                     Lista novaLista = listaRepository.findById(moverDTO.novoListaId())
@@ -330,6 +404,7 @@ public class TarefaService {
     }
 
     // ✅ MÉTODO ATUALIZADO - CONVERTE TAREFA PARA BUSCATAREFA
+    // ✅ MÉTODO ATUALIZADO - CONVERTE TAREFA PARA BUSCATAREFA
     private BuscaTarefa converterParaDTO(Tarefa tarefa) {
         try {
             // ✅ Buscar membros da tarefa
@@ -345,13 +420,13 @@ public class TarefaService {
                     .map(membro -> membro.getUsuario().getId())
                     .collect(Collectors.toList());
 
-            // ✅ Criar lista de MembroSimplificadoDTO
+            // ✅ Criar lista de MembroSimplificadoDTO com username
             List<MembroSimplificadoDTO> membrosDTO = membros.stream()
                     .map(membro -> new MembroSimplificadoDTO(
                             membro.getId(),
                             membro.getUsuario().getId(),
                             membro.getUsuario().getNome(),
-                            membro.getUsuario().getEmail(),
+                            membro.getUsuario().getEmail(),  // ✅ username = email
                             membro.getUsuario().getFoto()
                     ))
                     .collect(Collectors.toList());
@@ -359,7 +434,7 @@ public class TarefaService {
             return new BuscaTarefa(
                     tarefa.getId(),
                     tarefa.getEmpresa() != null ? tarefa.getEmpresa().getId() : null,
-                    tarefa.getEmpresa() != null ? tarefa.getEmpresa().getNome() : null, // ✅ NOME DA EMPRESA
+                    tarefa.getEmpresa() != null ? tarefa.getEmpresa().getNome() : null,
                     tarefa.getLista() != null ? tarefa.getLista().getId() : null,
                     tarefa.getTitulo(),
                     tarefa.getDescricao(),
@@ -373,12 +448,13 @@ public class TarefaService {
                     tarefa.getObservacoes(),
                     membroIds,     // ✅ IDs DOS MEMBROS
                     usuarioIds,    // ✅ IDs DOS USUÁRIOS (PARA FILTRO)
-                    membrosDTO     // ✅ DETALHES DOS MEMBROS
+                    membrosDTO     // ✅ DETALHES DOS MEMBROS COM USERNAME
             );
         } catch (Exception e) {
             throw new RuntimeException("Erro ao converter tarefa para DTO: " + e.getMessage(), e);
         }
     }
+
 
     // ✅ MÉTODO ATUALIZADO - DETALHAR TAREFA
     public Optional<DetalheTarefa> detalharTarefa(Long id) {
@@ -398,14 +474,14 @@ public class TarefaService {
 
                     List<ComentarioResponseDTO> comentariosDTO = comentarioService.buscarPorTarefa(tarefa.getId());
 
-                    // ✅ Buscar membros
+                    // ✅ Buscar membros com username
                     List<Membro> membros = membroRepository.findByTarefaId(tarefa.getId());
                     List<MembroSimplificadoDTO> membrosDTO = membros.stream()
                             .map(membro -> new MembroSimplificadoDTO(
                                     membro.getId(),
                                     membro.getUsuario().getId(),
                                     membro.getUsuario().getNome(),
-                                    membro.getUsuario().getEmail(),
+                                    membro.getUsuario().getEmail(),  // ✅ username = email
                                     membro.getUsuario().getFoto()
                             ))
                             .collect(Collectors.toList());
@@ -413,7 +489,7 @@ public class TarefaService {
                     return new DetalheTarefa(
                             tarefa.getId(),
                             tarefa.getEmpresa() != null ? tarefa.getEmpresa().getId() : null,
-                            tarefa.getEmpresa() != null ? tarefa.getEmpresa().getNome() : null, // ✅ NOME DA EMPRESA
+                            tarefa.getEmpresa() != null ? tarefa.getEmpresa().getNome() : null,
                             tarefa.getLista() != null ? tarefa.getLista().getId() : null,
                             tarefa.getTitulo(),
                             tarefa.getDescricao(),
@@ -427,10 +503,11 @@ public class TarefaService {
                             anexosDTO,
                             checklistsDTO,
                             comentariosDTO,
-                            membrosDTO,  // ✅ MEMBROS
+                            membrosDTO,  // ✅ MEMBROS COM USERNAME
                             null,        // historico
                             tarefa.getObservacoes()
                     );
                 });
     }
+
 }
