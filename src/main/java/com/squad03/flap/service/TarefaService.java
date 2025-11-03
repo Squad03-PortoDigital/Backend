@@ -119,9 +119,10 @@ public class TarefaService {
         }
     }
 
+    // ✅ OTIMIZADO - USA findAllWithDetails()
     public List<BuscaTarefa> getAllTarefas() {
         try {
-            return tarefaRepository.findAll().stream()
+            return tarefaRepository.findAllWithDetails().stream()
                     .map(this::converterParaDTO)
                     .toList();
         } catch (Exception e) {
@@ -240,21 +241,13 @@ public class TarefaService {
                     return converterParaDTO(tarefaSalva);
                 });
     }
+
     @Transactional
     public Optional<BuscaTarefa> moverTarefa(Long id, MoverTarefaDTO moverDTO) {
         String emailUsuarioLogado = segurancaUtils.getUsuarioLogadoEmail();
         Usuario usuarioLogado = usuarioRepository.findByEmail(emailUsuarioLogado)
                 .orElseThrow(() -> new TarefaValidacaoException("Usuário logado não encontrado no sistema."));
 
-         /*
-    boolean isMembro = membroRepository.existsByUsuarioIdAndTarefaId(usuarioLogado.getId(), id);
-    System.out.println("🔍 É membro? " + isMembro);
-
-    if (!isMembro) {
-        System.err.println("❌ Usuário não é membro da tarefa!");
-        throw new TarefaValidacaoException("Acesso negado. Você não é membro desta tarefa para movê-la.");
-    }
-    */
         return tarefaRepository.findById(id)
                 .map(tarefa -> {
                     Lista novaLista = listaRepository.findById(moverDTO.novoListaId())
@@ -386,13 +379,14 @@ public class TarefaService {
                 .toList();
     }
 
+    // ✅ OTIMIZADO - USA findByListaIdWithDetails()
     public List<BuscaTarefa> getTarefasPorLista(Long listaId) {
         try {
             if (!listaRepository.existsById(listaId)) {
                 throw new TarefaValidacaoException("Lista não encontrada com ID: " + listaId);
             }
 
-            return tarefaRepository.findByListaId(listaId).stream()
+            return tarefaRepository.findByListaIdWithDetails(listaId).stream()
                     .map(this::converterParaDTO)
                     .toList();
 
@@ -403,7 +397,6 @@ public class TarefaService {
         }
     }
 
-    // ✅ MÉTODO ATUALIZADO - CONVERTE TAREFA PARA BUSCATAREFA
     // ✅ MÉTODO ATUALIZADO - CONVERTE TAREFA PARA BUSCATAREFA
     private BuscaTarefa converterParaDTO(Tarefa tarefa) {
         try {
@@ -454,7 +447,6 @@ public class TarefaService {
             throw new RuntimeException("Erro ao converter tarefa para DTO: " + e.getMessage(), e);
         }
     }
-
 
     // ✅ MÉTODO ATUALIZADO - DETALHAR TAREFA
     public Optional<DetalheTarefa> detalharTarefa(Long id) {
@@ -509,5 +501,4 @@ public class TarefaService {
                     );
                 });
     }
-
 }
