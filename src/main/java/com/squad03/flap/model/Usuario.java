@@ -13,10 +13,6 @@ public class Usuario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "cargo_id", nullable = false)
-    private Cargo cargo;
-
     // NOVO RELACIONAMENTO: @ManyToOne com a entidade Role (EAGER para RBAC)
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id", nullable = false)
@@ -43,8 +39,7 @@ public class Usuario {
 
     public Usuario() {}
 
-    public Usuario(Cargo cargo, Role role, String foto, String nome, String email, String senha) {
-        this.cargo = cargo;
+    public Usuario(Role role, String foto, String nome, String email, String senha) {
         this.role = role;
         this.foto = foto;
         this.nome = nome;
@@ -58,14 +53,6 @@ public class Usuario {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public Cargo getCargo() {
-        return cargo;
-    }
-
-    public void setCargo(Cargo cargo) {
-        this.cargo = cargo;
     }
 
     public String getFoto() {

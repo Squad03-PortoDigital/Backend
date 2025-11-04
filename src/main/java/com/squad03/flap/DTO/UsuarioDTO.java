@@ -2,13 +2,12 @@ package com.squad03.flap.DTO;
 
 import com.squad03.flap.model.Role;
 import com.squad03.flap.model.Usuario;
-import com.squad03.flap.model.Cargo;
+
 import java.util.Objects;
 
 public class UsuarioDTO {
 
     private Long id;
-    private Long cargoId;
     private Long roleId;
     private String foto;
     private String nome;
@@ -18,11 +17,10 @@ public class UsuarioDTO {
     // Construtores
     public UsuarioDTO() {}
 
-    public UsuarioDTO(String nome, String email, String senha,Long cargoId) {
+    public UsuarioDTO(String nome, String email, String senha) {
         this.nome = nome;
         this.email = email;
         this.senha = senha;
-        this.cargoId = cargoId;
     }
 
     // Construtor a partir da entidade
@@ -34,10 +32,6 @@ public class UsuarioDTO {
             this.senha = usuario.getSenha();
             this.foto = usuario.getFoto();
 
-
-            if (usuario.getCargo() != null) {
-                this.cargoId = usuario.getCargo().getId();
-            }
         }
     }
 
@@ -56,12 +50,6 @@ public class UsuarioDTO {
             usuario.setRole(role);
         }
 
-        if (this.cargoId != null) {
-            Cargo cargo = new Cargo();
-            cargo.setId(this.cargoId);
-            usuario.setCargo(cargo);
-        }
-
         return usuario;
     }
 
@@ -72,14 +60,6 @@ public class UsuarioDTO {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public Long getCargoId() {
-        return cargoId;
-    }
-
-    public void setCargoId(Long cargoId) {
-        this.cargoId = cargoId;
     }
 
     public Long getRoleId() {
@@ -143,7 +123,6 @@ public class UsuarioDTO {
                 "id=" + id +
                 ", nome='" + nome + '\'' +
                 ", email='" + email + '\'' +
-                ", cargoId=" + cargoId +
                 '}';
     }
 }

@@ -1,9 +1,7 @@
 package com.squad03.flap.repository;
 
 import com.squad03.flap.DTO.UsuarioEquipeDTO;
-import com.squad03.flap.model.Cargo;
 import com.squad03.flap.model.Usuario;
-
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,30 +25,8 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     // Buscar usuários por nome contendo (case insensitive)
     List<Usuario> findByNomeContainingIgnoreCase(String nome);
 
-
-
-    // Buscar usuários por cargo
-    List<Usuario> findByCargo(Cargo cargo);
-
-    // Buscar usuários por cargo ID
-    List<Usuario> findByCargoId(Long cargoId);
-
-
     // Buscar usuários ordenados por nome
     List<Usuario> findAllByOrderByNomeAsc();
-
-
-
-
-    // Query para buscar usuários por nome do cargo
-    @Query("SELECT u FROM Usuario u WHERE u.cargo.nome = :nomeCargo")
-    List<Usuario> findByCargoNome(@Param("nomeCargo") String nomeCargo);
-
-
-
-    // Query para contar usuários por cargo
-    @Query("SELECT COUNT(u) FROM Usuario u WHERE u.cargo = :cargo")
-    Long countByCargo(@Param("cargo") Cargo cargo);
 
     // Buscar usuários que possuem foto
     @Query("SELECT u FROM Usuario u WHERE u.foto IS NOT NULL AND u.foto != ''")
@@ -60,17 +36,18 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     @Query("SELECT u FROM Usuario u WHERE u.foto IS NULL OR u.foto = ''")
     List<Usuario> findUsuariosSemFoto();
 
+    // ✅ CORRIGIDO: Removido c.nome e adicionado r.nome para Role
     @Query("SELECT new com.squad03.flap.DTO.UsuarioEquipeDTO(" +
             "   u.id, " +
             "   u.nome, " +
             "   u.email, " +
-            "   c.nome, " +
+            "   r.nome, " +  // ✅ Mudou de c.nome para r.nome (Role)
             "   u.foto, " +
             "   COUNT(m) " +
             ") " +
             "FROM Usuario u " +
-            "JOIN u.cargo c " +
+            "LEFT JOIN u.role r " +  // ✅ Mudou de u.cargo c para u.role r
             "LEFT JOIN u.membros m " +
-            "GROUP BY u.id, u.nome, u.email, c.nome, u.foto")
+            "GROUP BY u.id, u.nome, u.email, r.nome, u.foto")
     Page<UsuarioEquipeDTO> findEquipeComContagemTarefas(Pageable pageable);
 }

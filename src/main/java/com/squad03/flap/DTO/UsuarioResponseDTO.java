@@ -9,7 +9,6 @@ public class UsuarioResponseDTO {
     private String nome;
     private String email;
     private String foto;
-    private CargoDTO cargo;
     private BuscaRole role;  // <- adicionado
 
     // Construtores
@@ -42,9 +41,6 @@ public class UsuarioResponseDTO {
     public String getFoto() { return foto; }
     public void setFoto(String foto) { this.foto = foto; }
 
-    public CargoDTO getCargo() { return cargo; }
-    public void setCargo(CargoDTO cargo) { this.cargo = cargo; }
-
     public BuscaRole getRole() { return role; }  // ✅ Retorna RoleDTO
     public void setRole(BuscaRole role) { this.role = role; }  // <- setter role
 
@@ -67,7 +63,6 @@ public class UsuarioResponseDTO {
                 "id=" + id +
                 ", nome='" + nome + '\'' +
                 ", email='" + email + '\'' +
-                ", cargo=" + cargo +
                 ", role=" + role +  // <- incluir role
                 '}';
     }

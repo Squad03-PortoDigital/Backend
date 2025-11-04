@@ -1,7 +1,6 @@
 package com.squad03.flap.service;
 
 import com.squad03.flap.model.Usuario;
-import com.squad03.flap.repository.CargoRepository;
 import com.squad03.flap.repository.RoleRepository;
 import com.squad03.flap.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,9 +18,6 @@ public class UsuarioService {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
-
-    @Autowired
-    private CargoRepository cargoRepository;
 
     @Autowired
     private RoleRepository roleRepository; // NOVO: Injeção do RoleRepository
@@ -42,7 +38,6 @@ public class UsuarioService {
             throw new IllegalArgumentException("Já existe um usuário com este e-mail");
         }
 
-        validarCargo(usuario);
         validarRole(usuario); // <-- NOVO: Validação da Role
 
         // 🔐 Codifica a senha APENAS no cadastro
@@ -70,7 +65,6 @@ public class UsuarioService {
             throw new IllegalArgumentException("Já existe um usuário com este e-mail");
         }
 
-        validarCargo(usuario);
         validarRole(usuario); // <-- NOVO: Validação da Role
 
         // 🔐 Se a senha foi alterada, reencoda
@@ -112,20 +106,6 @@ public class UsuarioService {
     @Transactional(readOnly = true)
     public List<Usuario> buscarPorNome(String nome) {
         return usuarioRepository.findByNomeContainingIgnoreCase(nome);
-    }
-
-    @Transactional(readOnly = true)
-    public List<Usuario> buscarPorCargo(Long cargoId) {
-        // NOTE: Este método requer a criação do findByCargoId no seu UsuarioRepository
-        // return usuarioRepository.findByCargoId(cargoId);
-        return List.of(); // Placeholder para compilação
-    }
-
-    @Transactional(readOnly = true)
-    public List<Usuario> buscarPorNomeCargo(String nomeCargo) {
-        // NOTE: Este método requer a criação do findByCargoNome no seu UsuarioRepository
-        // return usuarioRepository.findByCargoNome(nomeCargo);
-        return List.of(); // Placeholder para compilação
     }
 
     @Transactional(readOnly = true)
@@ -181,16 +161,6 @@ public class UsuarioService {
             if (usuario.getSenha().length() < 4) {
                 throw new IllegalArgumentException("Senha deve ter pelo menos 4 caracteres");
             }
-        }
-    }
-
-    private void validarCargo(Usuario usuario) {
-        if (usuario.getCargo() == null || usuario.getCargo().getId() == null) {
-            throw new IllegalArgumentException("Cargo é obrigatório");
-        }
-
-        if (!cargoRepository.existsById(usuario.getCargo().getId())) {
-            throw new IllegalArgumentException("Cargo não encontrado");
         }
     }
 

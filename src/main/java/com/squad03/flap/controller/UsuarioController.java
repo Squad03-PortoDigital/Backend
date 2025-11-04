@@ -3,14 +3,12 @@ package com.squad03.flap.controller;
 import com.squad03.flap.repository.UsuarioRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import com.squad03.flap.model.Usuario;
-import com.squad03.flap.model.Cargo;
 import com.squad03.flap.DTO.UsuarioDTO;
 import com.squad03.flap.DTO.UsuarioResponseDTO;
 import com.squad03.flap.DTO.FotoDTO;
 import com.squad03.flap.model.Role;
 import java.util.Map;
 
-import com.squad03.flap.model.Usuario;
 import com.squad03.flap.service.UsuarioService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -120,13 +118,6 @@ public class UsuarioController {
 
             Usuario usuario = usuarioDTO.toEntity();
 
-            // ✅ Define cargo padrão se não foi informado
-            if (usuario.getCargo() == null || usuario.getCargo().getId() == null) {
-                Cargo cargoDefault = new Cargo();
-                cargoDefault.setId(1L); // ID do cargo padrão
-                usuario.setCargo(cargoDefault);
-            }
-
             // ✅ Define role padrão se não foi informada
             if (usuario.getRole() == null || usuario.getRole().getId() == null) {
                 Role roleDefault = new Role();
@@ -196,14 +187,6 @@ public class UsuarioController {
             if (usuarioDTO.getFoto() != null) {
                 usuarioExistente.setFoto(usuarioDTO.getFoto());
             }
-            if (usuarioDTO.getCargoId() != null) {
-                Cargo cargo = new Cargo();
-                cargo.setId(usuarioDTO.getCargoId());
-                usuarioExistente.setCargo(cargo);
-            }
-
-            // ❌ NÃO atualiza o email (campo readonly)
-            // O email permanece o mesmo sempre
 
             Usuario usuarioAtualizado = usuarioRepository.save(usuarioExistente);
             return ResponseEntity.ok(new UsuarioResponseDTO(usuarioAtualizado));
@@ -258,36 +241,6 @@ public class UsuarioController {
     public ResponseEntity<List<UsuarioResponseDTO>> buscarPorNome(@RequestParam String nome) {
         try {
             List<Usuario> usuarios = usuarioService.buscarPorNome(nome);
-            List<UsuarioResponseDTO> usuariosDTO = usuarios.stream()
-                    .map(UsuarioResponseDTO::new)
-                    .collect(Collectors.toList());
-            return ResponseEntity.ok(usuariosDTO);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-    // Buscar usuários por cargo
-    @GetMapping("/cargo/{cargoId}")
-    @PreAuthorize("hasAuthority('USUARIO_LER')")
-    public ResponseEntity<List<UsuarioResponseDTO>> buscarPorCargo(@PathVariable Long cargoId) {
-        try {
-            List<Usuario> usuarios = usuarioService.buscarPorCargo(cargoId);
-            List<UsuarioResponseDTO> usuariosDTO = usuarios.stream()
-                    .map(UsuarioResponseDTO::new)
-                    .collect(Collectors.toList());
-            return ResponseEntity.ok(usuariosDTO);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-    // Buscar usuários por nome do cargo
-    @GetMapping("/cargo/nome/{nomeCargo}")
-    @PreAuthorize("hasAuthority('USUARIO_LER')")
-    public ResponseEntity<List<UsuarioResponseDTO>> buscarPorNomeCargo(@PathVariable String nomeCargo) {
-        try {
-            List<Usuario> usuarios = usuarioService.buscarPorNomeCargo(nomeCargo);
             List<UsuarioResponseDTO> usuariosDTO = usuarios.stream()
                     .map(UsuarioResponseDTO::new)
                     .collect(Collectors.toList());
