@@ -24,7 +24,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
+@EnableMethodSecurity  // ✅ ATIVA @PreAuthorize
 public class SecurityConfig {
 
     @Autowired
@@ -51,45 +51,13 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 
                 .authorizeHttpRequests(auth -> auth
-                        // Rotas públicas
+                        // ========== ROTAS PÚBLICAS ==========
                         .requestMatchers(HttpMethod.POST, "/usuarios/cadastro").permitAll()
                         .requestMatchers(HttpMethod.POST, "/usuarios/login").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/cargos", "/roles").permitAll()
 
-                        // Rotas autenticadas
-                        .requestMatchers(HttpMethod.GET, "/usuarios/me").authenticated()
-
-                        // ✅ ADICIONAR: Operações de arquivamento (ANTES das rotas gerais de tarefas)
-                        .requestMatchers(HttpMethod.GET, "/tarefas/arquivadas").authenticated()
-                        .requestMatchers(HttpMethod.PATCH, "/tarefas/*/arquivar").authenticated()
-                        .requestMatchers(HttpMethod.PATCH, "/tarefas/*/desarquivar").authenticated()
-
-                        // Operações em tarefas
-                        .requestMatchers(HttpMethod.GET, "/tarefas/**").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/tarefas").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/tarefas/**").authenticated()
-                        .requestMatchers(HttpMethod.PATCH, "/tarefas/**").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/tarefas/**").authenticated()
-
-                        // Operações em listas
-                        .requestMatchers(HttpMethod.GET, "/listas/**").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/listas").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/listas/**").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/listas/**").authenticated()
-
-                        // Empresas
-                        .requestMatchers(HttpMethod.GET, "/empresas/**").authenticated()
-
-                        // ✅ Usar hasRole() - Spring adiciona prefixo ROLE_ automaticamente
-                        .requestMatchers(HttpMethod.GET, "/usuarios").hasRole("ADMINISTRADOR_MASTER")
-
-                        // Operações individuais em usuários
-                        .requestMatchers(HttpMethod.GET, "/usuarios/**").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/usuarios/**").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/usuarios/**").hasRole("ADMINISTRADOR_MASTER")
-
-                        // Todas as outras rotas
+                        // ========== TODAS AS OUTRAS ROTAS PRECISAM DE AUTENTICAÇÃO ==========
+                        // A autorização específica é feita com @PreAuthorize nos Controllers
                         .anyRequest().authenticated()
                 )
 

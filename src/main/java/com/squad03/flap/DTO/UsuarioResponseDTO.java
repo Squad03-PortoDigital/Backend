@@ -10,7 +10,7 @@ public class UsuarioResponseDTO {
     private String email;
     private String foto;
     private CargoDTO cargo;
-    private String role;  // <- adicionado
+    private BuscaRole role;  // <- adicionado
 
     // Construtores
     public UsuarioResponseDTO() {}
@@ -21,11 +21,10 @@ public class UsuarioResponseDTO {
             this.id = usuario.getId();
             this.nome = usuario.getNome();
             this.email = usuario.getEmail();
-            this.foto = usuario.getFoto();
-            this.role = usuario.getRole() != null ? usuario.getRole().getNome() : null; // <- populate role
+            this.foto = usuario.getFoto();// <- populate role
 
-            if (usuario.getCargo() != null) {
-                this.cargo = new CargoDTO(usuario.getCargo());
+            if (usuario.getRole() != null) {
+                this.role = new BuscaRole(usuario.getRole());
             }
         }
     }
@@ -46,8 +45,8 @@ public class UsuarioResponseDTO {
     public CargoDTO getCargo() { return cargo; }
     public void setCargo(CargoDTO cargo) { this.cargo = cargo; }
 
-    public String getRole() { return role; }  // <- getter role
-    public void setRole(String role) { this.role = role; }  // <- setter role
+    public BuscaRole getRole() { return role; }  // ✅ Retorna RoleDTO
+    public void setRole(BuscaRole role) { this.role = role; }  // <- setter role
 
     // equals e hashCode
     @Override
