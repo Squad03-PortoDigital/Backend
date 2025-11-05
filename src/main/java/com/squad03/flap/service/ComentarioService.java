@@ -106,15 +106,7 @@ public class ComentarioService {
     }
 
     private ComentarioResponseDTO converterParaDTO(Comentario comentario) {
-        return new ComentarioResponseDTO(
-                comentario.getId(),
-                comentario.getTexto(),
-                comentario.getDataCriacao(),
-                comentario.getDataAtualizacao(),
-                comentario.getUsuario().getId(),
-                comentario.getUsuario().getNome(),
-                comentario.getTarefa().getId(),
-                comentario.getTarefa().getTitulo()
-        );
+        return new ComentarioResponseDTO(comentario);  // ✅ Usa o novo construtor
     }
+
 }

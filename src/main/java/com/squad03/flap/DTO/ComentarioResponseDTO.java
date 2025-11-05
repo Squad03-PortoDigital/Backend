@@ -1,6 +1,6 @@
 package com.squad03.flap.DTO;
 
-
+import com.squad03.flap.model.Comentario;
 import java.time.LocalDateTime;
 
 public class ComentarioResponseDTO {
@@ -9,87 +9,71 @@ public class ComentarioResponseDTO {
     private String texto;
     private LocalDateTime dataCriacao;
     private LocalDateTime dataAtualizacao;
-    private Long usuarioId;
-    private String usuarioNome;
     private Long tarefaId;
     private String tarefaTitulo;
+    private UsuarioComentarioDTO usuario;  // ✅ NOVO - Objeto aninhado
 
     public ComentarioResponseDTO() {}
 
-    public ComentarioResponseDTO(Long id, String texto, LocalDateTime dataCriacao,
-                                 LocalDateTime dataAtualizacao, Long usuarioId,
-                                 String usuarioNome, Long tarefaId, String tarefaTitulo) {
-        this.id = id;
-        this.texto = texto;
-        this.dataCriacao = dataCriacao;
-        this.dataAtualizacao = dataAtualizacao;
-        this.usuarioId = usuarioId;
-        this.usuarioNome = usuarioNome;
-        this.tarefaId = tarefaId;
-        this.tarefaTitulo = tarefaTitulo;
+    // ✅ Construtor a partir da entidade
+    public ComentarioResponseDTO(Comentario comentario) {
+        this.id = comentario.getId();
+        this.texto = comentario.getTexto();
+        this.dataCriacao = comentario.getDataCriacao();
+        this.dataAtualizacao = comentario.getDataAtualizacao();
+        this.tarefaId = comentario.getTarefa().getId();
+        this.tarefaTitulo = comentario.getTarefa().getTitulo();
+
+        // ✅ Monta o objeto usuario
+        if (comentario.getUsuario() != null) {
+            this.usuario = new UsuarioComentarioDTO(
+                    comentario.getUsuario().getId(),
+                    comentario.getUsuario().getNome(),
+                    comentario.getUsuario().getEmail(),
+                    comentario.getUsuario().getFoto()
+            );
+        }
     }
 
-    public Long getId() {
-        return id;
-    }
+    // Getters e Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public String getTexto() { return texto; }
+    public void setTexto(String texto) { this.texto = texto; }
 
-    public String getTexto() {
-        return texto;
-    }
+    public LocalDateTime getDataCriacao() { return dataCriacao; }
+    public void setDataCriacao(LocalDateTime dataCriacao) { this.dataCriacao = dataCriacao; }
 
-    public void setTexto(String texto) {
-        this.texto = texto;
-    }
+    public LocalDateTime getDataAtualizacao() { return dataAtualizacao; }
+    public void setDataAtualizacao(LocalDateTime dataAtualizacao) { this.dataAtualizacao = dataAtualizacao; }
 
-    public LocalDateTime getDataCriacao() {
-        return dataCriacao;
-    }
+    public Long getTarefaId() { return tarefaId; }
+    public void setTarefaId(Long tarefaId) { this.tarefaId = tarefaId; }
 
-    public void setDataCriacao(LocalDateTime dataCriacao) {
-        this.dataCriacao = dataCriacao;
-    }
+    public String getTarefaTitulo() { return tarefaTitulo; }
+    public void setTarefaTitulo(String tarefaTitulo) { this.tarefaTitulo = tarefaTitulo; }
 
-    public LocalDateTime getDataAtualizacao() {
-        return dataAtualizacao;
-    }
+    public UsuarioComentarioDTO getUsuario() { return usuario; }
+    public void setUsuario(UsuarioComentarioDTO usuario) { this.usuario = usuario; }
 
-    public void setDataAtualizacao(LocalDateTime dataAtualizacao) {
-        this.dataAtualizacao = dataAtualizacao;
-    }
+    // ✅ CLASSE INTERNA para o usuario do comentário
+    public static class UsuarioComentarioDTO {
+        private Long id;
+        private String nome;
+        private String email;
+        private String foto;
 
-    public Long getUsuarioId() {
-        return usuarioId;
-    }
+        public UsuarioComentarioDTO(Long id, String nome, String email, String foto) {
+            this.id = id;
+            this.nome = nome;
+            this.email = email;
+            this.foto = foto;
+        }
 
-    public void setUsuarioId(Long usuarioId) {
-        this.usuarioId = usuarioId;
-    }
-
-    public String getUsuarioNome() {
-        return usuarioNome;
-    }
-
-    public void setUsuarioNome(String usuarioNome) {
-        this.usuarioNome = usuarioNome;
-    }
-
-    public Long getTarefaId() {
-        return tarefaId;
-    }
-
-    public void setTarefaId(Long tarefaId) {
-        this.tarefaId = tarefaId;
-    }
-
-    public String getTarefaTitulo() {
-        return tarefaTitulo;
-    }
-
-    public void setTarefaTitulo(String tarefaTitulo) {
-        this.tarefaTitulo = tarefaTitulo;
+        public Long getId() { return id; }
+        public String getNome() { return nome; }
+        public String getEmail() { return email; }
+        public String getFoto() { return foto; }
     }
 }
