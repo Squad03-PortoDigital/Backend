@@ -3,15 +3,18 @@ package com.squad03.flap.controller;
 import com.squad03.flap.DTO.AtualizacaoChecklist;
 import com.squad03.flap.DTO.BuscaChecklist;
 import com.squad03.flap.DTO.CadastroChecklist;
+import com.squad03.flap.DTO.ChecklistResponseDTO;
 import com.squad03.flap.service.ChecklistService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/checklists")
@@ -55,10 +58,11 @@ public class ChecklistController {
     }
 
     @GetMapping("/tarefa/{tarefaId}")
-    public ResponseEntity<List<BuscaChecklist>> listarChecklistsPorTarefa(@PathVariable Long tarefaId) {
-        List<BuscaChecklist> checklists = checklistService.listarChecklistsPorTarefa(tarefaId);
+    public ResponseEntity<List<ChecklistResponseDTO>> listarChecklistsPorTarefaComItens(@PathVariable Long tarefaId) {
+        List<ChecklistResponseDTO> checklists = checklistService.listarChecklistsPorTarefa(tarefaId);
         return ResponseEntity.ok(checklists);
     }
+
 
     @PutMapping("/{id}")
     public ResponseEntity<BuscaChecklist> atualizarChecklist(@PathVariable Long id, 

@@ -3,6 +3,7 @@ package com.squad03.flap.service;
 import com.squad03.flap.DTO.AtualizacaoChecklist;
 import com.squad03.flap.DTO.BuscaChecklist;
 import com.squad03.flap.DTO.CadastroChecklist;
+import com.squad03.flap.DTO.ChecklistResponseDTO;
 import com.squad03.flap.model.Checklist;
 import com.squad03.flap.model.Tarefa;
 import com.squad03.flap.repository.ChecklistRepository;
@@ -52,10 +53,10 @@ public class ChecklistService {
                 .collect(Collectors.toList());
     }
 
-    public List<BuscaChecklist> listarChecklistsPorTarefa(Long tarefaId) {
+    public List<ChecklistResponseDTO> listarChecklistsPorTarefa(Long tarefaId) {
         return checklistRepository.findByTarefaIdWithItens(tarefaId)
                 .stream()
-                .map(BuscaChecklist::new)
+                .map(ChecklistResponseDTO::new)
                 .collect(Collectors.toList());
     }
 

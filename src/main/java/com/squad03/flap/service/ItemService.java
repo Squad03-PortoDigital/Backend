@@ -107,6 +107,7 @@ public class ItemService {
         return Optional.of(new BuscaItem(itemAtualizado));
     }
 
+
     public boolean deletarItem(Long id) {
         if (itemRepository.existsById(id)) {
             itemRepository.deleteById(id);
@@ -117,15 +118,18 @@ public class ItemService {
 
     public Optional<BuscaItem> alternarStatusItem(Long id) {
         Optional<Item> itemOpt = itemRepository.findById(id);
-        
+
         if (itemOpt.isEmpty()) {
             return Optional.empty();
         }
 
         Item item = itemOpt.get();
+
+        // ✅ Alterna o status - use getStatus() e setStatus()
         item.setStatus(!item.getStatus());
-        
+
         Item itemAtualizado = itemRepository.save(item);
         return Optional.of(new BuscaItem(itemAtualizado));
     }
+
 }
