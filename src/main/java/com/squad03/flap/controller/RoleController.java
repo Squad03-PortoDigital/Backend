@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,6 +24,7 @@ public class RoleController {
 
     // Criar nova role
     @PostMapping
+    @PreAuthorize("hasAuthority('ROLE_GERENCIAR')")
     public ResponseEntity<?> salvarRole(@RequestBody CadastroRole dados) {
         try {
             // ✅ Validações
@@ -73,6 +75,7 @@ public class RoleController {
 
     // Atualizar role
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('ROLE_GERENCIAR')")
     public ResponseEntity<?> atualizarRole(@PathVariable Long id, @RequestBody AtualizacaoRole dados) {
         try {
             // ✅ Validações
@@ -100,6 +103,7 @@ public class RoleController {
 
     // Deletar role
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('ROLE_GERENCIAR')")
     public ResponseEntity<?> deletarRole(@PathVariable Long id) {
         try {
             boolean deletado = roleService.deletarRole(id);

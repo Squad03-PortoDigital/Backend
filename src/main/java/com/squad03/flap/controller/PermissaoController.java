@@ -29,4 +29,24 @@ public class PermissaoController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    @GetMapping("/usuarios/{usuarioId}")
+    public ResponseEntity<?> buscarPermissoesDoUsuario(@PathVariable Long usuarioId) {
+        try {
+            List<PermissaoDTO> permissoes = permissaoService.buscarPermissoesDoUsuario(usuarioId);
+            return ResponseEntity.ok(permissoes);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(404).body("{ \"erro\": \"" + e.getMessage() + "\" }");
+        }
+    }
+
+    @GetMapping("/usuarios/{usuarioId}/nomes")
+    public ResponseEntity<?> buscarNomesPermissoesDoUsuario(@PathVariable Long usuarioId) {
+        try {
+            List<String> permissoes = permissaoService.buscarNomesPermissoesDoUsuario(usuarioId);
+            return ResponseEntity.ok(permissoes);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(404).body("{ \"erro\": \"" + e.getMessage() + "\" }");
+        }
+    }
 }

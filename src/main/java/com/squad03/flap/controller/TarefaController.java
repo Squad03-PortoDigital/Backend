@@ -78,6 +78,7 @@ public class TarefaController {
             @ApiResponse(responseCode = "201", description = "Tarefa criada com sucesso"),
             @ApiResponse(responseCode = "400", description = "Dados inválidos"),
     })
+    @PreAuthorize("hasAuthority('TAREFA_CRIAR')")
     public ResponseEntity<?> criarTarefa(
             @Parameter(description = "Dados para criar a tarefa") @RequestBody CadastroTarefa cadastroTarefa) {
         try {
@@ -97,6 +98,7 @@ public class TarefaController {
             @ApiResponse(responseCode = "200", description = "Tarefa atualizada com sucesso"),
             @ApiResponse(responseCode = "404", description = "Tarefa não encontrada")
     })
+    @PreAuthorize("hasAuthority('TAREFA_EDITAR_GERAL')")
     public ResponseEntity<BuscaTarefa> atualizarTarefa(
             @Parameter(description = "ID da tarefa") @PathVariable Long id,
             @Parameter(description = "Dados para atualizar") @RequestBody AtualizacaoTarefa atualizarDTO) {
@@ -116,6 +118,7 @@ public class TarefaController {
             @ApiResponse(responseCode = "403", description = "Acesso negado: Usuário não é membro"),
             @ApiResponse(responseCode = "404", description = "Tarefa não encontrada")
     })
+    @PreAuthorize("hasAuthority('TAREFA_MOVER')")
     public ResponseEntity<BuscaTarefa> moverTarefa(
             @Parameter(description = "ID da tarefa") @PathVariable Long id,
             @Parameter(description = "Nova posição e/ou lista") @RequestBody MoverTarefaDTO moverDTO) {
@@ -137,6 +140,7 @@ public class TarefaController {
             @ApiResponse(responseCode = "200", description = "Tarefa arquivada com sucesso"),
             @ApiResponse(responseCode = "404", description = "Tarefa não encontrada")
     })
+    @PreAuthorize("hasAuthority('TAREFA_EDITAR_GERAL')")
     public ResponseEntity<BuscaTarefa> arquivarTarefa(@PathVariable Long id) {
         try {
             return tarefaService.arquivarTarefa(id)
@@ -150,6 +154,7 @@ public class TarefaController {
     // ✅ NOVO: Listar tarefas arquivadas
     @GetMapping("/arquivadas")
     @Operation(summary = "Buscar tarefas arquivadas", description = "Retorna todas as tarefas com status ARQUIVADA")
+    @PreAuthorize("hasAuthority('TAREFA_EDITAR_GERAL')")
     public ResponseEntity<List<BuscaTarefa>> getTarefasArquivadas() {
         try {
             List<BuscaTarefa> tarefas = tarefaService.getTarefasPorStatus(StatusTarefa.ARQUIVADA);
@@ -162,6 +167,7 @@ public class TarefaController {
     // ✅ NOVO: Desarquivar tarefa
     @PatchMapping("/{id}/desarquivar")
     @Operation(summary = "Desarquivar tarefa", description = "Remove a tarefa do status ARQUIVADA e retorna para A_FAZER")
+    @PreAuthorize("hasAuthority('TAREFA_EDITAR_GERAL')")
     public ResponseEntity<BuscaTarefa> desarquivarTarefa(@PathVariable Long id) {
         try {
             return tarefaService.desarquivarTarefa(id)
@@ -178,6 +184,7 @@ public class TarefaController {
             @ApiResponse(responseCode = "204", description = "Tarefa excluída com sucesso"),
             @ApiResponse(responseCode = "404", description = "Tarefa não encontrada")
     })
+    @PreAuthorize("hasAuthority('TAREFA_DELETAR')")
     public ResponseEntity<Void> deletarTarefa(
             @Parameter(description = "ID da tarefa") @PathVariable Long id) {
         try {

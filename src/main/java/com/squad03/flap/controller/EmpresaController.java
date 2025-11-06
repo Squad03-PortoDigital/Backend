@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,6 +28,7 @@ public class EmpresaController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('EMPRESA_CRIAR')")
     public ResponseEntity<BuscaEmpresa> createEmpresa(@RequestBody @Valid CadastroEmpresa dados) {
         BuscaEmpresa empresaSalva = empresaService.cadastrarEmpresa(dados);
         return new ResponseEntity<>(empresaSalva, HttpStatus.CREATED);
@@ -45,11 +47,13 @@ public class EmpresaController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('EMPRESA_EDITAR')")
     public ResponseEntity<BuscaEmpresa> updateEmpresa(@PathVariable Long id, @RequestBody AtualizacaoEmpresa dados) {
         BuscaEmpresa empresa = empresaService.AtualizarEmpresa(id, dados);
         return ResponseEntity.ok(empresa);    }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('EMPRESA_EDITAR')")
     public ResponseEntity<Void> deleteEmpresa(@PathVariable Long id) {
         empresaService.excluirEmpresa(id);
         return ResponseEntity.noContent().build();

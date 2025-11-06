@@ -29,6 +29,7 @@ public class ListaController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('LISTA_GERENCIAR')")
     public ResponseEntity<BuscaLista> createLista(@RequestBody @Valid CadastroLista dados) {
         BuscaLista lista = listaService.cadastrarLista(dados);
         return new ResponseEntity<>(lista,HttpStatus.CREATED);
@@ -47,7 +48,7 @@ public class ListaController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('LISTA_GERENCIAR')") // RBAC: Protege a alteração de Listas
+    @PreAuthorize("hasAuthority('LISTA_GERENCIAR')")
     public ResponseEntity<BuscaLista> updateLista(@PathVariable Long id, @RequestBody AtualizacaoLista dados) {
         // O service retorna Optional<BuscaLista>
         return listaService.atualizarLista(id, dados)
@@ -58,6 +59,7 @@ public class ListaController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('LISTA_GERENCIAR')")
     public ResponseEntity<Void> deleteLista(@PathVariable Long id) {
         listaService.excluirLista(id);
         return ResponseEntity.noContent().build();

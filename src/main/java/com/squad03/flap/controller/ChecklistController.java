@@ -28,6 +28,7 @@ public class ChecklistController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('TAREFA_EDITAR_GERAL')")
     public ResponseEntity<BuscaChecklist> criarChecklist(@RequestBody @Valid CadastroChecklist cadastroChecklist) {
         try {
             BuscaChecklist checklist = checklistService.cadastrarChecklist(cadastroChecklist);
@@ -65,6 +66,7 @@ public class ChecklistController {
 
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('TAREFA_EDITAR_GERAL')")
     public ResponseEntity<BuscaChecklist> atualizarChecklist(@PathVariable Long id, 
                                                            @RequestBody @Valid AtualizacaoChecklist atualizacaoChecklist) {
         Optional<BuscaChecklist> checklistAtualizado = checklistService.atualizarChecklist(id, atualizacaoChecklist);
@@ -73,6 +75,7 @@ public class ChecklistController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('TAREFA_EDITAR_GERAL')")
     public ResponseEntity<Void> deletarChecklist(@PathVariable Long id) {
         boolean deletado = checklistService.deletarChecklist(id);
         if (deletado) {

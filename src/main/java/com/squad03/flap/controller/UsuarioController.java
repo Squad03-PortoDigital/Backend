@@ -59,7 +59,6 @@ public class UsuarioController {
         }
     }
 
-    // ✅ ADICIONE este método no UsuarioController
     @PutMapping("/me")
     public ResponseEntity<?> atualizarMeuPerfil(
             Authentication authentication,
@@ -91,6 +90,7 @@ public class UsuarioController {
     // ==================== CRUD DE USUÁRIOS ====================
 
     @PostMapping("/cadastro")
+    @PreAuthorize("hasAuthority('USUARIO_CADASTRAR')")
     public ResponseEntity<?> criar(@RequestBody UsuarioDTO usuarioDTO) {
         try {
             // Validações básicas
@@ -118,7 +118,6 @@ public class UsuarioController {
 
             Usuario usuario = usuarioDTO.toEntity();
 
-            // ✅ Define role padrão se não foi informada
             if (usuario.getRole() == null || usuario.getRole().getId() == null) {
                 Role roleDefault = new Role();
                 roleDefault.setId(1L); // ID da role padrão (usuário comum)
@@ -142,7 +141,6 @@ public class UsuarioController {
 
     // Buscar todos os usuários
     @GetMapping
-    @PreAuthorize("hasAuthority('USUARIO_LER')")
     public ResponseEntity<List<UsuarioResponseDTO>> buscarTodos() {
         try {
             List<Usuario> usuarios = usuarioService.buscarTodos();
@@ -172,7 +170,6 @@ public class UsuarioController {
         }
     }
 
-    // ✅ ATUALIZAR USUÁRIO (PUT) - SEM BIO
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('USUARIO_EDITAR_PERMISSAO')")
     public ResponseEntity<?> atualizar(@PathVariable Long id, @RequestBody UsuarioDTO usuarioDTO) {
