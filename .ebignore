@@ -1,0 +1,9 @@
+# .ebignore (na raiz do Backend)
+.git
+.gitignore
+.DS_Store
+target/
+.vscode/
+.idea/
+*.iml
+*.class

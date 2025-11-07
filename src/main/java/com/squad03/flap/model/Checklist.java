@@ -1,20 +1,10 @@
 package com.squad03.flap.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.util.Set;
 
 @Entity
-@Getter
-@Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Table(name = "checklist")
 public class Checklist {
 
@@ -39,6 +29,21 @@ public class Checklist {
         this.titulo = titulo;
         this.cor = cor;
         this.tarefa = tarefa;
+    }
+
+    public Checklist(Long id, String titulo, String cor, Tarefa tarefa, Set<Item> itens) {
+        this.id = id;
+        this.titulo = titulo;
+        this.cor = cor;
+        this.tarefa = tarefa;
+        this.itens = itens;
+    }
+
+    public Checklist() {
+    }
+
+    public static ChecklistBuilder builder() {
+        return new ChecklistBuilder();
     }
 
     public Long getId() {
@@ -79,5 +84,49 @@ public class Checklist {
 
     public void setItens(Set<Item> itens) {
         this.itens = itens;
+    }
+
+    public static class ChecklistBuilder {
+        private Long id;
+        private String titulo;
+        private String cor;
+        private Tarefa tarefa;
+        private Set<Item> itens;
+
+        ChecklistBuilder() {
+        }
+
+        public ChecklistBuilder id(Long id) {
+            this.id = id;
+            return this;
+        }
+
+        public ChecklistBuilder titulo(String titulo) {
+            this.titulo = titulo;
+            return this;
+        }
+
+        public ChecklistBuilder cor(String cor) {
+            this.cor = cor;
+            return this;
+        }
+
+        public ChecklistBuilder tarefa(Tarefa tarefa) {
+            this.tarefa = tarefa;
+            return this;
+        }
+
+        public ChecklistBuilder itens(Set<Item> itens) {
+            this.itens = itens;
+            return this;
+        }
+
+        public Checklist build() {
+            return new Checklist(this.id, this.titulo, this.cor, this.tarefa, this.itens);
+        }
+
+        public String toString() {
+            return "Checklist.ChecklistBuilder(id=" + this.id + ", titulo=" + this.titulo + ", cor=" + this.cor + ", tarefa=" + this.tarefa + ", itens=" + this.itens + ")";
+        }
     }
 }
