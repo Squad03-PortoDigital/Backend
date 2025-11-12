@@ -1,6 +1,7 @@
 package com.squad03.flap.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,6 +12,7 @@ import com.squad03.flap.model.Tarefa.StatusTarefa;
 import com.squad03.flap.model.Tarefa.PrioridadeTarefa;
 import com.squad03.flap.repository.*;
 import com.squad03.flap.util.SegurancaUtils;
+import com.squad03.flap.service.NotificacaoService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,6 +26,9 @@ public class TarefaService {
 
     @Autowired
     private TarefaRepository tarefaRepository;
+
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
     @Autowired
     private AnexoRepository anexoRepository;
@@ -45,6 +50,9 @@ public class TarefaService {
 
     @Autowired
     private MembroService membroService;
+
+    @Autowired
+    private NotificacaoService notificacaoService;
 
     @Autowired
     private MembroRepository membroRepository;
@@ -110,7 +118,20 @@ public class TarefaService {
             membroDTO.setTarefaId(tarefaSalva.getId());
             membroService.criarMembro(membroDTO);
 
-            return converterParaDTO(tarefaSalva);
+            BuscaTarefa tarefaDTO = converterParaDTO(tarefaSalva);
+
+            TarefaEventoDTO evento = new TarefaEventoDTO(
+                    "CRIADA",
+                    tarefaDTO.id(),
+                    tarefaDTO.listaId(),
+                    null,
+                    tarefaDTO.posicao().intValue(),
+                    tarefaDTO,
+                    usuarioCriador.getNome()
+            );
+            messagingTemplate.convertAndSend("/topic/tarefas", evento);
+
+            return tarefaDTO;
 
         } catch (TarefaValidacaoException e) {
             throw new RuntimeException(e.getMessage(), e);
@@ -118,6 +139,8 @@ public class TarefaService {
             throw new RuntimeException("Erro ao criar tarefa: " + e.getMessage(), e);
         }
     }
+
+
 
     // ✅ OTIMIZADO - USA findAllWithDetails()
     public List<BuscaTarefa> getAllTarefas() {
@@ -202,6 +225,24 @@ public class TarefaService {
                                     membroRepository.save(novoMembro);
 
                                     System.out.println("✅ Adicionado membro: " + usuario.getNome());
+
+                                    try {
+                                        Usuario remetente = usuarioRepository.findByEmail(segurancaUtils.getUsuarioLogadoEmail())
+                                                .orElse(null);
+
+                                        notificacaoService.criarNotificacao(
+                                                TipoNotificacao.ATRIBUICAO,
+                                                "Nova tarefa atribuída",
+                                                (remetente != null ? remetente.getNome() : "Alguém") +
+                                                        " atribuiu você à tarefa '" + tarefa.getTitulo() + "'",
+                                                usuario,      // Destinatário
+                                                remetente,    // Quem atribuiu
+                                                tarefa        // Tarefa
+                                        );
+                                        System.out.println("📬 Notificação enviada para: " + usuario.getNome());
+                                    } catch (Exception e) {
+                                        System.err.println("⚠️ Erro ao enviar notificação: " + e.getMessage());
+                                    }
                                 }
                             }
 
@@ -210,13 +251,32 @@ public class TarefaService {
 
                         // Salvar tarefa
                         Tarefa tarefaSalva = tarefaRepository.save(tarefa);
-                        return converterParaDTO(tarefaSalva);
+                        BuscaTarefa tarefaAtualizada = converterParaDTO(tarefaSalva);
+
+                        // ✅ ✅ ✅ ENVIA EVENTO WEBSOCKET ✅ ✅ ✅
+                        try {
+                            TarefaEventoDTO evento = new TarefaEventoDTO();
+                            evento.setTipo("ATUALIZADA"); // ✅ STRING
+                            evento.setTarefaId(tarefaSalva.getId());
+                            evento.setListaId(tarefaAtualizada.listaId());
+                            evento.setTarefa(tarefaAtualizada);
+
+                            messagingTemplate.convertAndSend("/topic/tarefas", evento);
+                            System.out.println("📡 Evento WebSocket enviado: ATUALIZADA");
+                        } catch (Exception e) {
+                            System.err.println("⚠️ Erro ao enviar evento WebSocket: " + e.getMessage());
+                            // Não falha a operação se o WebSocket der erro
+                        }
+                        // ✅ ✅ ✅ FIM DO WEBSOCKET ✅ ✅ ✅
+
+                        return tarefaAtualizada;
                     });
         } catch (Exception e) {
             System.err.println("❌ Erro ao atualizar tarefa: " + e.getMessage());
             throw new RuntimeException("Erro ao atualizar tarefa: " + e.getMessage(), e);
         }
     }
+
 
     @Transactional
     public Optional<BuscaTarefa> arquivarTarefa(Long id) {
@@ -250,6 +310,9 @@ public class TarefaService {
 
         return tarefaRepository.findById(id)
                 .map(tarefa -> {
+                    // ✅ NOVO: Guarda a lista antiga ANTES de mover
+                    Long listaIdOrigem = tarefa.getLista() != null ? tarefa.getLista().getId() : null;
+
                     Lista novaLista = listaRepository.findById(moverDTO.novoListaId())
                             .orElseThrow(() -> new TarefaValidacaoException("Lista de destino não encontrada."));
 
@@ -268,14 +331,44 @@ public class TarefaService {
 
                     tarefaRepository.saveAll(tarefasDaLista);
 
-                    return converterParaDTO(tarefa);
+                    BuscaTarefa tarefaDTO = converterParaDTO(tarefa);
+
+                    // ✅ ATUALIZADO: Evento WebSocket com listaIdOrigem
+                    TarefaEventoDTO evento = new TarefaEventoDTO(
+                            "MOVIDA",
+                            id,
+                            moverDTO.novoListaId(),
+                            listaIdOrigem,  // ✅ NOVO: Lista de origem
+                            moverDTO.novaPosicao().intValue(),
+                            tarefaDTO,
+                            usuarioLogado.getNome()
+                    );
+                    messagingTemplate.convertAndSend("/topic/tarefas", evento);
+
+                    return tarefaDTO;
                 });
     }
+
+
+
 
     public boolean deletarTarefa(Long id) {
         try {
             if (tarefaRepository.existsById(id)) {
                 tarefaRepository.deleteById(id);
+
+                // ✅ WEBSOCKET: Enviar evento de tarefa deletada
+                TarefaEventoDTO evento = new TarefaEventoDTO(
+                        "DELETADA",
+                        id,
+                        null,
+                        null,
+                        null,
+                        null,
+                        "Sistema"
+                );
+                messagingTemplate.convertAndSend("/topic/tarefas", evento);
+
                 return true;
             }
             return false;
@@ -283,6 +376,7 @@ public class TarefaService {
             throw new RuntimeException("Erro ao deletar tarefa: " + e.getMessage(), e);
         }
     }
+
 
     public List<BuscaTarefa> getTarefasPorStatus(StatusTarefa status) {
         try {

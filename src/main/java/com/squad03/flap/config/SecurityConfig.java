@@ -79,6 +79,7 @@ public class SecurityConfig {
                         .requestMatchers("/itens/**").authenticated()
                         .requestMatchers("/membros/**").authenticated()
                         .requestMatchers("/permissoes/**").authenticated()
+                        .requestMatchers("/notificacoes/**").authenticated()
                         // ========== QUALQUER OUTRA ROTA ==========
                         .anyRequest().authenticated()
                 )
