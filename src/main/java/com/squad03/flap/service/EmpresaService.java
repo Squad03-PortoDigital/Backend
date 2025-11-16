@@ -36,12 +36,24 @@ public class EmpresaService {
     }
 
     public List<BuscaEmpresa> buscarEmpresas() {
-        return empresaRepository.findAll().stream().map(BuscaEmpresa::new).collect(Collectors.toList());
+        return empresaRepository.findAll()
+                .stream()
+                .map(BuscaEmpresa::new)
+                .collect(Collectors.toList());
+    }
+
+    // ✅ NOVO MÉTODO - Buscar por status de arquivamento
+    public List<BuscaEmpresa> buscarEmpresasPorStatus(Boolean arquivada) {
+        return empresaRepository.findByArquivada(arquivada)
+                .stream()
+                .map(BuscaEmpresa::new)
+                .collect(Collectors.toList());
     }
 
     @Transactional
     public BuscaEmpresa AtualizarEmpresa(Long id, AtualizacaoEmpresa atualizacaoEmpresa) {
-        Empresa empresa = empresaRepository.findById(id).get();
+        Empresa empresa = empresaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Empresa não encontrada"));
 
         empresa.setNome(atualizacaoEmpresa.nome());
         empresa.setCnpj(atualizacaoEmpresa.cnpj());
@@ -52,6 +64,18 @@ public class EmpresaService {
         empresa.setFoto(atualizacaoEmpresa.foto());
         empresa.setAgenteLink(atualizacaoEmpresa.agenteLink());
 
+        Empresa empresaAtualizada = empresaRepository.save(empresa);
+
+        return new BuscaEmpresa(empresaAtualizada);
+    }
+
+    // ✅ NOVO MÉTODO - Arquivar/Desarquivar empresa
+    @Transactional
+    public BuscaEmpresa arquivarEmpresa(Long id, Boolean arquivada) {
+        Empresa empresa = empresaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Empresa não encontrada"));
+
+        empresa.setArquivada(arquivada);
         Empresa empresaAtualizada = empresaRepository.save(empresa);
 
         return new BuscaEmpresa(empresaAtualizada);

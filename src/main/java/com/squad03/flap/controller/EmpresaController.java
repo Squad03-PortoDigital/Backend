@@ -13,6 +13,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -35,8 +36,17 @@ public class EmpresaController {
     }
 
     @GetMapping
-    public ResponseEntity<List<BuscaEmpresa>> findAll() {
-        List<BuscaEmpresa> empresas = empresaService.buscarEmpresas();
+    public ResponseEntity<List<BuscaEmpresa>> findAll(
+            @RequestParam(required = false) Boolean arquivada
+    ) {
+        List<BuscaEmpresa> empresas;
+
+        if (arquivada != null) {
+            empresas = empresaService.buscarEmpresasPorStatus(arquivada);
+        } else {
+            empresas = empresaService.buscarEmpresas();
+        }
+
         return ResponseEntity.ok(empresas);
     }
 
@@ -50,7 +60,37 @@ public class EmpresaController {
     @PreAuthorize("hasAuthority('EMPRESA_EDITAR')")
     public ResponseEntity<BuscaEmpresa> updateEmpresa(@PathVariable Long id, @RequestBody AtualizacaoEmpresa dados) {
         BuscaEmpresa empresa = empresaService.AtualizarEmpresa(id, dados);
-        return ResponseEntity.ok(empresa);    }
+        return ResponseEntity.ok(empresa);
+    }
+
+    // ✅ NOVO ENDPOINT - Arquivar/Desarquivar empresa
+    @PatchMapping("/{id}/arquivar")
+    @PreAuthorize("hasAuthority('EMPRESA_EDITAR')")
+    public ResponseEntity<?> arquivarEmpresa(
+            @PathVariable Long id,
+            @RequestBody Map<String, Boolean> request
+    ) {
+        try {
+            Boolean arquivada = request.get("arquivada");
+            if (arquivada == null) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "Campo 'arquivada' é obrigatório"));
+            }
+
+            BuscaEmpresa empresa = empresaService.arquivarEmpresa(id, arquivada);
+
+            return ResponseEntity.ok(Map.of(
+                    "message", arquivada ? "Empresa arquivada com sucesso" : "Empresa restaurada com sucesso",
+                    "empresa", empresa
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Erro ao arquivar empresa: " + e.getMessage()));
+        }
+    }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('EMPRESA_EDITAR')")
