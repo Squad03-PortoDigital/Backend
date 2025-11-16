@@ -8,6 +8,7 @@ public class TarefaEventoDTO {
     private Integer novaPosicao;
     private BuscaTarefa tarefa;
     private String usuarioNome;
+    private Boolean concluida;
 
     public TarefaEventoDTO() {
     }
@@ -20,6 +21,7 @@ public class TarefaEventoDTO {
         this.novaPosicao = novaPosicao;
         this.tarefa = tarefa;
         this.usuarioNome = usuarioNome;
+        this.concluida = tarefa != null ? tarefa.concluida() : null;
     }
 
     public String getTipo() {
@@ -28,6 +30,14 @@ public class TarefaEventoDTO {
 
     public void setTipo(String tipo) {
         this.tipo = tipo;
+    }
+
+    public Boolean getConcluida() {
+        return concluida;
+    }
+
+    public void setConcluida(Boolean concluida) {
+        this.concluida = concluida;
     }
 
     public Long getListaIdOrigem() { return listaIdOrigem; }
@@ -64,6 +74,7 @@ public class TarefaEventoDTO {
 
     public void setTarefa(BuscaTarefa tarefa) {
         this.tarefa = tarefa;
+        this.concluida = tarefa != null ? tarefa.concluida() : null;
     }
 
     public String getUsuarioNome() {

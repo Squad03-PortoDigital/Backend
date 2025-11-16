@@ -66,6 +66,9 @@ public class Tarefa {
 
     private LocalDateTime dtConclusao;
 
+    @Column(nullable = false)
+    private Boolean concluida = false;  // ✅ NOVO CAMPO
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "tarefa_tags", joinColumns = @JoinColumn(name = "tarefa_id"))
     @Column(name = "tag")
@@ -74,7 +77,7 @@ public class Tarefa {
     @Column(length = 500)
     private String observacoes;
 
-    public Tarefa(Long id, Empresa empresa, Lista lista, Set<Anexo> anexos, Set<Checklist> checklists, Set<Comentario> comentarios, Set<Membro> membros, String titulo, String descricao, StatusTarefa status, PrioridadeTarefa prioridade, Double posicao, LocalDateTime dtCriacao, LocalDateTime dtEntrega, LocalDateTime dtConclusao, List<String> tags, String observacoes) {
+    public Tarefa(Long id, Empresa empresa, Lista lista, Set<Anexo> anexos, Set<Checklist> checklists, Set<Comentario> comentarios, Set<Membro> membros, String titulo, String descricao, StatusTarefa status, PrioridadeTarefa prioridade, Double posicao, LocalDateTime dtCriacao, LocalDateTime dtEntrega, LocalDateTime dtConclusao, Boolean concluida, List<String> tags, String observacoes) {
         this.id = id;
         this.empresa = empresa;
         this.lista = lista;
@@ -90,6 +93,7 @@ public class Tarefa {
         this.dtCriacao = dtCriacao;
         this.dtEntrega = dtEntrega;
         this.dtConclusao = dtConclusao;
+        this.concluida = concluida;
         this.tags = tags;
         this.observacoes = observacoes;
     }
@@ -114,6 +118,9 @@ public class Tarefa {
         }
         if (prioridade == null) {
             prioridade = PrioridadeTarefa.MEDIA;
+        }
+        if (concluida == null) {
+            concluida = false;
         }
     }
 
@@ -258,6 +265,22 @@ public class Tarefa {
         this.dtConclusao = dtConclusao;
     }
 
+    public Boolean getConcluida() {
+        return concluida;
+    }
+
+    public void setConcluida(Boolean concluida) {
+        this.concluida = concluida;
+        // ✅ Atualiza automaticamente a data de conclusão
+        if (concluida && this.dtConclusao == null) {
+            this.dtConclusao = LocalDateTime.now();
+        }
+        // Se desmarcou, limpa a data
+        if (!concluida) {
+            this.dtConclusao = null;
+        }
+    }
+
     public void setTags(List<String> tags) {
         this.tags = tags;
     }
@@ -321,6 +344,7 @@ public class Tarefa {
         private LocalDateTime dtConclusao;
         private List<String> tags;
         private String observacoes;
+        private Boolean concluida;
 
         TarefaBuilder() {
         }
@@ -415,9 +439,13 @@ public class Tarefa {
             this.observacoes = observacoes;
             return this;
         }
+        public TarefaBuilder concluida(Boolean concluida) {
+            this.concluida = concluida;
+            return this;
+        }
 
         public Tarefa build() {
-            return new Tarefa(this.id, this.empresa, this.lista, this.anexos, this.checklists, this.comentarios, this.membros, this.titulo, this.descricao, this.status, this.prioridade, this.posicao, this.dtCriacao, this.dtEntrega, this.dtConclusao, this.tags, this.observacoes);
+            return new Tarefa(this.id, this.empresa, this.lista, this.anexos, this.checklists, this.comentarios, this.membros, this.titulo, this.descricao, this.status, this.prioridade, this.posicao, this.dtCriacao, this.dtEntrega, this.dtConclusao, this.concluida, this.tags, this.observacoes);
         }
 
         public String toString() {

@@ -12,7 +12,8 @@ public record AtualizacaoTarefa(
         StatusTarefa status,
         PrioridadeTarefa prioridade,
         LocalDateTime dtEntrega,
+        Boolean concluida,  // ✅ NOVO
         List<String> tags,
         String observacoes,
-        List<Long> membroIds  // ✅ ADICIONAR - IDs dos USUÁRIOS
+        List<Long> membroIds
 ) {}

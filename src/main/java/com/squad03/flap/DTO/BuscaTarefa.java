@@ -18,9 +18,10 @@ public record BuscaTarefa(
         LocalDateTime dtCriacao,
         LocalDateTime dtEntrega,
         LocalDateTime dtConclusao,
+        Boolean concluida,  // ✅ NOVO
         List<String> tags,
         String observacoes,
-        List<Long> membroIds,        // IDs dos registros na tabela Membro
-        List<Long> usuarioIds,       // IDs dos Usuários (para filtro no frontend)
-        List<MembroSimplificadoDTO> membros  // Detalhes completos dos membros
+        List<Long> membroIds,
+        List<Long> usuarioIds,
+        List<MembroSimplificadoDTO> membros
 ) {}

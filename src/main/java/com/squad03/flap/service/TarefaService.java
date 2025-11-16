@@ -185,12 +185,16 @@ public class TarefaService {
                         if (atualizarDTO.dtEntrega() != null) {
                             tarefa.setDtEntrega(atualizarDTO.dtEntrega());
                         }
+                        if (atualizarDTO.concluida() != null) {
+                            tarefa.setConcluida(atualizarDTO.concluida());
+                        }
                         if (atualizarDTO.tags() != null) {
                             tarefa.setTags(atualizarDTO.tags());
                         }
                         if (atualizarDTO.observacoes() != null) {
                             tarefa.setObservacoes(atualizarDTO.observacoes());
                         }
+
 
                         // ✅ ATUALIZAR MEMBROS
                         if (atualizarDTO.membroIds() != null) {
@@ -491,29 +495,24 @@ public class TarefaService {
         }
     }
 
-    // ✅ MÉTODO ATUALIZADO - CONVERTE TAREFA PARA BUSCATAREFA
     private BuscaTarefa converterParaDTO(Tarefa tarefa) {
         try {
-            // ✅ Buscar membros da tarefa
             List<Membro> membros = membroRepository.findByTarefaId(tarefa.getId());
 
-            // ✅ Extrair IDs dos membros (tabela membro)
             List<Long> membroIds = membros.stream()
                     .map(Membro::getId)
                     .collect(Collectors.toList());
 
-            // ✅ Extrair IDs dos usuários (para filtro)
             List<Long> usuarioIds = membros.stream()
                     .map(membro -> membro.getUsuario().getId())
                     .collect(Collectors.toList());
 
-            // ✅ Criar lista de MembroSimplificadoDTO com username
             List<MembroSimplificadoDTO> membrosDTO = membros.stream()
                     .map(membro -> new MembroSimplificadoDTO(
                             membro.getId(),
                             membro.getUsuario().getId(),
                             membro.getUsuario().getNome(),
-                            membro.getUsuario().getEmail(),  // ✅ username = email
+                            membro.getUsuario().getEmail(),
                             membro.getUsuario().getFoto()
                     ))
                     .collect(Collectors.toList());
@@ -531,16 +530,18 @@ public class TarefaService {
                     tarefa.getDtCriacao(),
                     tarefa.getDtEntrega(),
                     tarefa.getDtConclusao(),
+                    tarefa.getConcluida(),  // ✅ NOVO
                     tarefa.getTags() != null ? tarefa.getTags() : new ArrayList<>(),
                     tarefa.getObservacoes(),
-                    membroIds,     // ✅ IDs DOS MEMBROS
-                    usuarioIds,    // ✅ IDs DOS USUÁRIOS (PARA FILTRO)
-                    membrosDTO     // ✅ DETALHES DOS MEMBROS COM USERNAME
+                    membroIds,
+                    usuarioIds,
+                    membrosDTO
             );
         } catch (Exception e) {
             throw new RuntimeException("Erro ao converter tarefa para DTO: " + e.getMessage(), e);
         }
     }
+
 
     // ✅ MÉTODO ATUALIZADO - DETALHAR TAREFA
     public Optional<DetalheTarefa> detalharTarefa(Long id) {
@@ -585,6 +586,7 @@ public class TarefaService {
                             tarefa.getDtCriacao(),
                             tarefa.getDtEntrega(),
                             tarefa.getDtConclusao(),
+                            tarefa.getConcluida(),
                             tarefa.getTags(),
                             anexosDTO,
                             checklistsDTO,
@@ -595,4 +597,42 @@ public class TarefaService {
                     );
                 });
     }
+    @Transactional
+    public BuscaTarefa marcarComoConcluida(Long id, Boolean concluida) {
+        System.out.println(concluida ? "✅ Marcando tarefa como concluída ID: " + id
+                : "❌ Desmarcando tarefa ID: " + id);
+
+        Tarefa tarefa = tarefaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tarefa não encontrada"));
+
+        tarefa.setConcluida(concluida);
+        Tarefa tarefaSalva = tarefaRepository.save(tarefa);
+
+        BuscaTarefa tarefaDTO = converterParaDTO(tarefaSalva);
+
+        // ✅ WEBSOCKET: Enviar evento de atualização
+        try {
+            String emailUsuarioLogado = segurancaUtils.getUsuarioLogadoEmail();
+            Usuario usuarioLogado = usuarioRepository.findByEmail(emailUsuarioLogado).orElse(null);
+
+            TarefaEventoDTO evento = new TarefaEventoDTO(
+                    "ATUALIZADA",
+                    tarefaSalva.getId(),
+                    tarefaDTO.listaId(),
+                    null,
+                    null,
+                    tarefaDTO,
+                    usuarioLogado != null ? usuarioLogado.getNome() : "Sistema"
+            );
+            messagingTemplate.convertAndSend("/topic/tarefas", evento);
+            System.out.println("📡 Evento WebSocket enviado: TAREFA CONCLUÍDA");
+        } catch (Exception e) {
+            System.err.println("⚠️ Erro ao enviar evento WebSocket: " + e.getMessage());
+        }
+
+        System.out.println(concluida ? "✅ Tarefa marcada como concluída!"
+                : "❌ Tarefa desmarcada!");
+        return tarefaDTO;
+    }
+
 }
