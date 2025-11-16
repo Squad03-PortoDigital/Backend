@@ -231,7 +231,7 @@ public class TarefaController {
             @ApiResponse(responseCode = "200", description = "Tarefa atualizada com sucesso"),
             @ApiResponse(responseCode = "404", description = "Tarefa não encontrada")
     })
-    @PreAuthorize("hasAuthority('TAREFA_EDITAR')")
+    @PreAuthorize("hasAuthority('TAREFA_EDITAR_GERAL')")
     public ResponseEntity<?> marcarComoConcluida(
             @Parameter(description = "ID da tarefa") @PathVariable Long id,
             @RequestBody java.util.Map<String, Boolean> request) {
