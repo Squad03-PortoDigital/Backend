@@ -73,6 +73,17 @@ public class NotificacaoService {
                     notificacao.setLida(true);
                     notificacaoRepository.save(notificacao);
 
+                    long contador = notificacaoRepository.countByUsuarioAndLida(
+                            notificacao.getUsuario(),
+                            false
+                    );
+
+                    messagingTemplate.convertAndSendToUser(
+                            emailUsuario,
+                            "/queue/notificacoes/count",
+                            contador
+                    );
+
                     return converterParaDTO(notificacao);
                 });
     }
@@ -90,6 +101,12 @@ public class NotificacaoService {
                     }
 
                     notificacaoRepository.saveAll(notificacoes);
+
+                    messagingTemplate.convertAndSendToUser(
+                            emailUsuario,
+                            "/queue/notificacoes/count",
+                            0L
+                    );
 
                     return notificacoes.size();
                 });
@@ -133,9 +150,17 @@ public class NotificacaoService {
 
         // ✅ Envia via WebSocket
         NotificacaoDTO dto = converterParaDTO(notificacao);
-        messagingTemplate.convertAndSend(
-                "/topic/notificacoes/" + destinatario.getId(),
+        messagingTemplate.convertAndSendToUser(
+                destinatario.getEmail(),
+                "/queue/notificacoes",
                 dto
+        );
+
+        long contador = notificacaoRepository.countByUsuarioAndLida(destinatario, false);
+        messagingTemplate.convertAndSendToUser(
+                destinatario.getEmail(),
+                "/queue/notificacoes/count",
+                contador
         );
     }
 

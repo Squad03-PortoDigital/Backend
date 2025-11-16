@@ -46,6 +46,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+
                 // ✅ CORS - AGORA CORRETO
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
@@ -80,6 +81,10 @@ public class SecurityConfig {
                         .requestMatchers("/membros/**").authenticated()
                         .requestMatchers("/permissoes/**").authenticated()
                         .requestMatchers("/notificacoes/**").authenticated()
+                        .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/app/**").permitAll()
+                        .requestMatchers("/topic/**").permitAll()
+                        .requestMatchers("/queue/**").permitAll()
                         // ========== QUALQUER OUTRA ROTA ==========
                         .anyRequest().authenticated()
                 )
@@ -125,6 +130,7 @@ public class SecurityConfig {
 
         // ✅ ORIGENS PERMITIDAS
         configuration.setAllowedOriginPatterns(List.of(
+                "https://flap.gabrielfiel.com.br",
                 "https://staging.d2d3xjpdbpom8h.amplifyapp.com",
                 "http://localhost:3000",
                 "http://localhost:5173",
