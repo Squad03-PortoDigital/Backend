@@ -59,6 +59,9 @@ public class Tarefa {
     @Column(nullable = false)
     private Double posicao;
 
+    @Column(name = "google_event_id", length = 500)
+    private String googleEventId;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime dtCriacao;
 
@@ -77,7 +80,10 @@ public class Tarefa {
     @Column(length = 500)
     private String observacoes;
 
-    public Tarefa(Long id, Empresa empresa, Lista lista, Set<Anexo> anexos, Set<Checklist> checklists, Set<Comentario> comentarios, Set<Membro> membros, String titulo, String descricao, StatusTarefa status, PrioridadeTarefa prioridade, Double posicao, LocalDateTime dtCriacao, LocalDateTime dtEntrega, LocalDateTime dtConclusao, Boolean concluida, List<String> tags, String observacoes) {
+    @Column(name = "dropbox_path", length = 500)
+    private String dropboxPath;
+
+    public Tarefa(Long id, Empresa empresa, Lista lista, Set<Anexo> anexos, Set<Checklist> checklists, Set<Comentario> comentarios, Set<Membro> membros, String titulo, String descricao, StatusTarefa status, PrioridadeTarefa prioridade, Double posicao, LocalDateTime dtCriacao, LocalDateTime dtEntrega, LocalDateTime dtConclusao, Boolean concluida, List<String> tags, String observacoes, String dropboxPath) {
         this.id = id;
         this.empresa = empresa;
         this.lista = lista;
@@ -96,6 +102,7 @@ public class Tarefa {
         this.concluida = concluida;
         this.tags = tags;
         this.observacoes = observacoes;
+        this.dropboxPath = dropboxPath;
     }
 
     public Tarefa() {
@@ -289,6 +296,23 @@ public class Tarefa {
         this.observacoes = observacoes;
     }
 
+    public String getDropboxPath() {
+        return dropboxPath;
+    }
+
+    public void setDropboxPath(String dropboxPath) {
+        this.dropboxPath = dropboxPath;
+    }
+
+    public String getGoogleEventId() {
+        return googleEventId;
+    }
+
+    public void setGoogleEventId(String googleEventId) {
+        this.googleEventId = googleEventId;
+    }
+
+
     // ✅ ENUM ATUALIZADO COM ARQUIVADA
     public enum StatusTarefa {
         A_FAZER("A Fazer"),
@@ -345,6 +369,7 @@ public class Tarefa {
         private List<String> tags;
         private String observacoes;
         private Boolean concluida;
+        private String dropboxPath;
 
         TarefaBuilder() {
         }
@@ -444,8 +469,13 @@ public class Tarefa {
             return this;
         }
 
+        public TarefaBuilder dropboxPath(String dropboxPath) {  // ✅ NOVO MÉTODO
+            this.dropboxPath = dropboxPath;
+            return this;
+        }
+
         public Tarefa build() {
-            return new Tarefa(this.id, this.empresa, this.lista, this.anexos, this.checklists, this.comentarios, this.membros, this.titulo, this.descricao, this.status, this.prioridade, this.posicao, this.dtCriacao, this.dtEntrega, this.dtConclusao, this.concluida, this.tags, this.observacoes);
+            return new Tarefa(this.id, this.empresa, this.lista, this.anexos, this.checklists, this.comentarios, this.membros, this.titulo, this.descricao, this.status, this.prioridade, this.posicao, this.dtCriacao, this.dtEntrega, this.dtConclusao, this.concluida, this.tags, this.observacoes, this.dropboxPath);
         }
 
         public String toString() {

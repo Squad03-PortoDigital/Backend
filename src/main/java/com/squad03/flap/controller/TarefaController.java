@@ -43,6 +43,19 @@ public class TarefaController {
         }
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<?> searchTarefas(@RequestParam String query) {
+        try {
+            List<BuscaTarefa> resultados = tarefaService.buscarTarefasPorTitulo(query);
+            return ResponseEntity.ok(resultados);
+        } catch (Exception e) {
+            e.printStackTrace(); // <--- Veja no log!
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erro: " + e.getMessage());
+        }
+    }
+
+
+
     @GetMapping("/{id}")
     @Operation(summary = "Detalhar tarefa com dados completos", description = "Retorna uma tarefa específica com todos os dados complexos (anexos, checklist, etc.)")
     public ResponseEntity<DetalheTarefa> getTarefaById(

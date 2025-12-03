@@ -18,12 +18,14 @@ public record DetalheTarefa(
         LocalDateTime dtCriacao,
         LocalDateTime dtEntrega,
         LocalDateTime dtConclusao,
-        Boolean concluida,  // ✅ NOVO
+        Boolean concluida,
         List<String> tags,
         List<BuscaAnexo> anexos,
         List<BuscaChecklist> checklist,
         List<ComentarioResponseDTO> comentarios,
         List<MembroSimplificadoDTO> membros,
         Object historico,
-        String observacoes
+        String observacoes,
+        String dropboxPath  // ✅ ADICIONAR AQUI
 ) {}
+

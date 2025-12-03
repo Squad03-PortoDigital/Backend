@@ -18,10 +18,12 @@ public record BuscaTarefa(
         LocalDateTime dtCriacao,
         LocalDateTime dtEntrega,
         LocalDateTime dtConclusao,
-        Boolean concluida,  // ✅ NOVO
+        Boolean concluida,
         List<String> tags,
         String observacoes,
         List<Long> membroIds,
         List<Long> usuarioIds,
-        List<MembroSimplificadoDTO> membros
+        List<MembroSimplificadoDTO> membros,
+        String dropboxPath  // ✅ ADICIONAR AQUI
 ) {}
+

@@ -85,6 +85,7 @@ public class SecurityConfig {
                         .requestMatchers("/app/**").permitAll()
                         .requestMatchers("/topic/**").permitAll()
                         .requestMatchers("/queue/**").permitAll()
+                        .requestMatchers("/google/**").permitAll()
                         // ========== QUALQUER OUTRA ROTA ==========
                         .anyRequest().authenticated()
                 )

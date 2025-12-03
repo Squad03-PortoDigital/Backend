@@ -24,10 +24,23 @@ public class EmpresaService {
         this.empresaRepository = empresaRepository;
     }
 
+    @Autowired
+    private DropboxService dropboxService;
+
     @Transactional
     public BuscaEmpresa cadastrarEmpresa(CadastroEmpresa cadastroEmpresa) {
         Empresa novaEmpresa = new Empresa(cadastroEmpresa);
         Empresa empresaSalva = empresaRepository.save(novaEmpresa);
+
+        try {
+            String pastaPath = "/" + sanitizeName(empresaSalva.getNome());
+            dropboxService.createFolder(pastaPath);
+            System.out.println("📁 Pasta criada no Dropbox: " + pastaPath);
+        } catch (Exception e) {
+            System.err.println("⚠️ Erro ao criar pasta no Dropbox para empresa: " + e.getMessage());
+            // Não falha a criação da empresa se der erro no Dropbox
+        }
+
         return new BuscaEmpresa(empresaSalva);
     }
 
@@ -79,6 +92,19 @@ public class EmpresaService {
         Empresa empresaAtualizada = empresaRepository.save(empresa);
 
         return new BuscaEmpresa(empresaAtualizada);
+    }
+
+    private String sanitizeName(String name) {
+        if (name == null || name.isEmpty()) {
+            return "Sem-Nome";
+        }
+
+        return name
+                .trim()
+                .replaceAll("[^a-zA-Z0-9\\sÀ-ÿ-]", "") // Remove caracteres especiais, mantém acentos
+                .replaceAll("\\s+", "-") // Substitui espaços por hífens
+                .replaceAll("-+", "-") // Remove hífens duplicados
+                .substring(0, Math.min(name.length(), 50)); // Limita a 50 caracteres
     }
 
     @Transactional

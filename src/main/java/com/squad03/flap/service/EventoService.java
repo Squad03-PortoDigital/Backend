@@ -2,12 +2,17 @@ package com.squad03.flap.service;
 
 import com.squad03.flap.DTO.EventoDTO;
 import com.squad03.flap.model.Evento;
+import com.squad03.flap.model.Usuario;
 import com.squad03.flap.repository.EventoRepository;
+import com.squad03.flap.repository.UsuarioRepository;
+import com.squad03.flap.util.SegurancaUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -16,6 +21,15 @@ public class EventoService {
 
     @Autowired
     private EventoRepository eventoRepository;
+
+    @Autowired
+    private GoogleCalendarService googleCalendarService;
+
+    @Autowired
+    private SegurancaUtils segurancaUtils;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
 
     // Listar todos os eventos
     public List<EventoDTO> listarTodos() {
@@ -52,13 +66,50 @@ public class EventoService {
                 .collect(Collectors.toList());
     }
 
-    // Criar novo evento
+    // ✅ CRIAR NOVO EVENTO COM SINCRONIZAÇÃO GOOGLE CALENDAR
     @Transactional
     public EventoDTO criar(EventoDTO eventoDTO) {
         validarEvento(eventoDTO);
 
         Evento evento = converterParaEntidade(eventoDTO);
         evento = eventoRepository.save(evento);
+
+        // ✅ SINCRONIZAR COM GOOGLE CALENDAR
+        // ✅ SINCRONIZAR COM GOOGLE CALENDAR
+        try {
+            String emailUsuario = segurancaUtils.getUsuarioLogadoEmail();
+            Usuario usuario = usuarioRepository.findByEmail(emailUsuario).orElse(null);
+
+            if (usuario != null && usuario.getGoogleCalendarConectado()) {
+                LocalDateTime dataInicio;
+                LocalDateTime dataFim;
+
+                if (evento.getHorario() != null) {
+                    // Evento com horário específico
+                    dataInicio = LocalDateTime.of(evento.getData(), evento.getHorario());
+                    dataFim = dataInicio.plusHours(1);
+                } else {
+                    // Evento de dia inteiro (sem horário)
+                    dataInicio = LocalDateTime.of(evento.getData(), LocalTime.of(0, 0));
+                    dataFim = LocalDateTime.of(evento.getData(), LocalTime.of(23, 59));
+                }
+
+                googleCalendarService.criarEvento(
+                        usuario,
+                        evento.getTitulo(),
+                        evento.getDescricao(),
+                        dataInicio,
+                        dataFim
+                );
+
+                System.out.println("✅ Evento sincronizado com Google Calendar: " + evento.getTitulo());
+            }
+        } catch (Exception e) {
+            System.err.println("⚠️ Erro ao sincronizar com Google Calendar: " + e.getMessage());
+            e.printStackTrace();
+            // Não falha a criação do evento se der erro no Google
+        }
+
 
         return converterParaDTO(evento);
     }
