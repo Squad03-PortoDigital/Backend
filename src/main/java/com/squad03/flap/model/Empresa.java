@@ -3,6 +3,7 @@ package com.squad03.flap.model;
 import com.squad03.flap.DTO.CadastroEmpresa;
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -25,14 +26,34 @@ public class Empresa {
     @Column(nullable = false, length = 250)
     private String agenteLink;
 
+    // ✅ NOVO CAMPO
+    @Column(nullable = false)
+    private Boolean arquivada = false;
+
+    // ✅ NOVO CAMPO - Data de criação
+    @Column(name = "dt_criacao", updatable = false)
+    private LocalDateTime dataCriacao;
+
     @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Tarefa> tarefa;
+
+    // ✅ Hook executado antes de persistir
+    @PrePersist
+    protected void onCreate() {
+        if (dataCriacao == null) {
+            dataCriacao = LocalDateTime.now();
+        }
+        if (arquivada == null) {
+            arquivada = false;
+        }
+    }
 
     public Empresa() {}
 
     public Empresa(String nome, String foto) {
         this.nome = nome;
         this.foto = foto;
+        this.arquivada = false;
     }
 
     public Empresa(CadastroEmpresa cadastroEmpresa) {
@@ -44,7 +65,10 @@ public class Empresa {
         this.observacao = cadastroEmpresa.observacao();
         this.foto = cadastroEmpresa.foto();
         this.agenteLink = cadastroEmpresa.agenteLink();
+        this.arquivada = false;
     }
+
+    // ===== GETTERS E SETTERS =====
 
     public Long getId() {
         return id;
@@ -118,10 +142,23 @@ public class Empresa {
         return tarefa;
     }
 
+    // ✅ NOVOS GETTERS E SETTERS
+
+    public Boolean getArquivada() {
+        return arquivada;
+    }
+
+    public void setArquivada(Boolean arquivada) {
+        this.arquivada = arquivada;
+    }
+
+    public LocalDateTime getDataCriacao() {
+        return dataCriacao;
+    }
+
     @Override
     public final boolean equals(Object o) {
         if (!(o instanceof Empresa empresa)) return false;
-
         return id.equals(empresa.id);
     }
 

@@ -37,6 +37,13 @@ public class Usuario {
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Membro> membros = new HashSet<>();
 
+    // ✅ NOVOS CAMPOS PARA GOOGLE CALENDAR OAUTH
+    @Column(name = "google_refresh_token", columnDefinition = "TEXT")
+    private String googleRefreshToken;
+
+    @Column(name = "google_calendar_conectado", nullable = false)
+    private Boolean googleCalendarConectado = false;
+
     public Usuario() {}
 
     public Usuario(Role role, String foto, String nome, String email, String senha) {
@@ -111,6 +118,23 @@ public class Usuario {
     public void setRole(Role role) {
         this.role = role;
     }
+
+    public String getGoogleRefreshToken() {
+        return googleRefreshToken;
+    }
+
+    public void setGoogleRefreshToken(String googleRefreshToken) {
+        this.googleRefreshToken = googleRefreshToken;
+    }
+
+    public Boolean getGoogleCalendarConectado() {
+        return googleCalendarConectado;
+    }
+
+    public void setGoogleCalendarConectado(Boolean googleCalendarConectado) {
+        this.googleCalendarConectado = googleCalendarConectado;
+    }
+
 
     @Override
     public boolean equals(Object o) {

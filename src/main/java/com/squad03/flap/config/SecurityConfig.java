@@ -46,21 +46,51 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 
+                // ✅ CORS - AGORA CORRETO
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
+                // ✅ CSRF DESABILITADO
+                .csrf(csrf -> csrf.disable())
+
+                // ✅ SESSÃO - IF_REQUIRED mantém compatibilidade com ambos
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                )
+
+                // ✅ AUTORIZAÇÃO - REMOVEU DUPLICAÇÃO
                 .authorizeHttpRequests(auth -> auth
                         // ========== ROTAS PÚBLICAS ==========
                         .requestMatchers(HttpMethod.POST, "/usuarios/cadastro").permitAll()
                         .requestMatchers(HttpMethod.POST, "/usuarios/login").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/usuarios/me").permitAll()  // ✅ /me é público
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
 
-                        // ========== TODAS AS OUTRAS ROTAS PRECISAM DE AUTENTICAÇÃO ==========
+                        // ========== ROTAS QUE PRECISAM DE AUTENTICAÇÃO ==========
                         // A autorização específica é feita com @PreAuthorize nos Controllers
+                        .requestMatchers("/tarefas/**").authenticated()
+                        .requestMatchers("/empresas/**").authenticated()
+                        .requestMatchers("/usuarios/**").authenticated()
+                        .requestMatchers("/listas/**").authenticated()
+                        .requestMatchers("/roles/**").authenticated()
+                        .requestMatchers("/checklists/**").authenticated()
+                        .requestMatchers("/comentarios/**").authenticated()
+                        .requestMatchers("/equipes/**").authenticated()
+                        .requestMatchers("/eventos/**").authenticated()
+                        .requestMatchers("/itens/**").authenticated()
+                        .requestMatchers("/membros/**").authenticated()
+                        .requestMatchers("/permissoes/**").authenticated()
+                        .requestMatchers("/notificacoes/**").authenticated()
+                        .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/app/**").permitAll()
+                        .requestMatchers("/topic/**").permitAll()
+                        .requestMatchers("/queue/**").permitAll()
+                        .requestMatchers("/google/**").permitAll()
+                        // ========== QUALQUER OUTRA ROTA ==========
                         .anyRequest().authenticated()
                 )
 
+                // ✅ FORM LOGIN - MANTÉM SEGURANÇA
                 .formLogin(form -> form
                         .loginProcessingUrl("/usuarios/login")
                         .usernameParameter("email")
@@ -74,6 +104,7 @@ public class SecurityConfig {
                         .permitAll()
                 )
 
+                // ✅ LOGOUT
                 .logout(logout -> logout
                         .logoutUrl("/usuarios/logout")
                         .logoutSuccessHandler((request, response, authentication) -> {
@@ -86,7 +117,10 @@ public class SecurityConfig {
                         .permitAll()
                 )
 
-                .httpBasic(basic -> basic.disable());
+                // ✅ HABILITA BASIC AUTH (para requisições via token)
+                .httpBasic(basic -> basic
+                        .realmName("Flap API")
+                );
 
         return http.build();
     }
@@ -94,10 +128,35 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("*"));
+
+        // ✅ ORIGENS PERMITIDAS
+        configuration.setAllowedOriginPatterns(List.of(
+                "https://flap.gabrielfiel.com.br",
+                "https://staging.d2d3xjpdbpom8h.amplifyapp.com",
+                "http://localhost:3000",
+                "http://localhost:5173",
+                "http://127.0.0.1:5173",
+                "http://127.0.0.1:3000",
+                "http://*:5173",  // ✅ Qualquer IP na porta 5173
+                "http://*:3000"   // ✅ Qualquer IP na porta 3000
+        ));
+
+        // ✅ MÉTODOS PERMITIDOS
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(List.of("*"));
+
+        // ✅ HEADERS CRÍTICOS
+        configuration.setAllowedHeaders(List.of(
+                "Authorization",
+                "Content-Type",
+                "Accept",
+                "Origin"
+        ));
+
+        // ✅ CREDENCIAIS - ESSENCIAL PARA COOKIES/SESSÃO
         configuration.setAllowCredentials(true);
+
+        // ✅ TEMPO DE CACHE
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

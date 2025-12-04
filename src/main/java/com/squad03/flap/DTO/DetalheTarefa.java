@@ -8,7 +8,7 @@ import java.util.List;
 public record DetalheTarefa(
         Long id,
         Long empresaId,
-        String empresa,          // ✅ NOME DA EMPRESA
+        String empresa,
         Long listaId,
         String titulo,
         String descricao,
@@ -18,11 +18,14 @@ public record DetalheTarefa(
         LocalDateTime dtCriacao,
         LocalDateTime dtEntrega,
         LocalDateTime dtConclusao,
+        Boolean concluida,
         List<String> tags,
         List<BuscaAnexo> anexos,
         List<BuscaChecklist> checklist,
         List<ComentarioResponseDTO> comentarios,
-        List<MembroSimplificadoDTO> membros, // ✅ DETALHES DOS MEMBROS
+        List<MembroSimplificadoDTO> membros,
         Object historico,
-        String observacoes
+        String observacoes,
+        String dropboxPath  // ✅ ADICIONAR AQUI
 ) {}
+

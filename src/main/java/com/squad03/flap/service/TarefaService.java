@@ -1,6 +1,7 @@
 package com.squad03.flap.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,6 +12,7 @@ import com.squad03.flap.model.Tarefa.StatusTarefa;
 import com.squad03.flap.model.Tarefa.PrioridadeTarefa;
 import com.squad03.flap.repository.*;
 import com.squad03.flap.util.SegurancaUtils;
+import com.squad03.flap.service.NotificacaoService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,13 +28,22 @@ public class TarefaService {
     private TarefaRepository tarefaRepository;
 
     @Autowired
+    private SimpMessagingTemplate messagingTemplate;
+
+    @Autowired
     private AnexoRepository anexoRepository;
 
     @Autowired
     private EmpresaRepository empresaRepository;
 
     @Autowired
+    private DropboxService dropboxService;
+
+    @Autowired
     private ListaRepository listaRepository;
+
+    @Autowired
+    private GoogleCalendarService googleCalendarService;
 
     @Autowired
     private ChecklistRepository checklistRepository;
@@ -47,14 +58,27 @@ public class TarefaService {
     private MembroService membroService;
 
     @Autowired
+    private NotificacaoService notificacaoService;
+
+    @Autowired
     private MembroRepository membroRepository;
 
     @Autowired
     private SegurancaUtils segurancaUtils;
 
-    /**
-     * Cria uma nova tarefa, buscando as entidades relacionadas e validando os dados.
-     */
+    private String sanitizeName(String name) {
+        if (name == null || name.isEmpty()) {
+            return "Sem-Nome";
+        }
+
+        return name
+                .trim()
+                .replaceAll("[^a-zA-Z0-9\\sÀ-ÿ-]", "") // Remove caracteres especiais, mantém acentos
+                .replaceAll("\\s+", "-") // Substitui espaços por hífens
+                .replaceAll("-+", "-") // Remove hífens duplicados
+                .substring(0, Math.min(name.length(), 50)); // Limita a 50 caracteres
+    }
+
     public BuscaTarefa criarTarefa(CadastroTarefa cadastroTarefa) {
         try {
             String emailUsuarioLogado = segurancaUtils.getUsuarioLogadoEmail();
@@ -105,12 +129,42 @@ public class TarefaService {
 
             Tarefa tarefaSalva = tarefaRepository.save(novaTarefa);
 
+            // ✅ CRIAR PASTA NO DROPBOX
+            try {
+                String empresaPasta = sanitizeName(empresa.getNome());
+                String tarefaPasta = "Tarefa-" + tarefaSalva.getId() + "-" + sanitizeName(tarefaSalva.getTitulo());
+                String fullPath = "/" + empresaPasta + "/" + tarefaPasta;
+
+                dropboxService.createFolder(fullPath);
+
+                tarefaSalva.setDropboxPath(fullPath);
+                tarefaRepository.save(tarefaSalva);
+
+                System.out.println("📁 Pasta criada no Dropbox: " + fullPath);
+            } catch (Exception e) {
+                System.err.println("⚠️ Erro ao criar pasta no Dropbox: " + e.getMessage());
+                e.printStackTrace();
+            }
+
             MembroCreateDTO membroDTO = new MembroCreateDTO();
             membroDTO.setUsuarioId(usuarioCriador.getId());
             membroDTO.setTarefaId(tarefaSalva.getId());
             membroService.criarMembro(membroDTO);
 
-            return converterParaDTO(tarefaSalva);
+            BuscaTarefa tarefaDTO = converterParaDTO(tarefaSalva);
+
+            TarefaEventoDTO evento = new TarefaEventoDTO(
+                    "CRIADA",
+                    tarefaDTO.id(),
+                    tarefaDTO.listaId(),
+                    null,
+                    tarefaDTO.posicao().intValue(),
+                    tarefaDTO,
+                    usuarioCriador.getNome()
+            );
+            messagingTemplate.convertAndSend("/topic/tarefas", evento);
+
+            return tarefaDTO;
 
         } catch (TarefaValidacaoException e) {
             throw new RuntimeException(e.getMessage(), e);
@@ -118,6 +172,8 @@ public class TarefaService {
             throw new RuntimeException("Erro ao criar tarefa: " + e.getMessage(), e);
         }
     }
+
+
 
     // ✅ OTIMIZADO - USA findAllWithDetails()
     public List<BuscaTarefa> getAllTarefas() {
@@ -146,6 +202,10 @@ public class TarefaService {
         try {
             return tarefaRepository.findById(id)
                     .map(tarefa -> {
+                        // ✅ GUARDA O TÍTULO ANTIGO E PATH ANTIGO PARA COMPARAÇÃO
+                        String tituloAntigo = tarefa.getTitulo();
+                        String dropboxPathAntigo = tarefa.getDropboxPath();
+
                         // Atualiza campos básicos
                         if (atualizarDTO.titulo() != null) {
                             tarefa.setTitulo(atualizarDTO.titulo());
@@ -159,8 +219,14 @@ public class TarefaService {
                         if (atualizarDTO.prioridade() != null) {
                             tarefa.setPrioridade(atualizarDTO.prioridade());
                         }
+                        LocalDateTime dataEntregaAntiga = tarefa.getDtEntrega();
+                        boolean dataDeEntregaFoiAdicionada = (dataEntregaAntiga == null && atualizarDTO.dtEntrega() != null);
+
                         if (atualizarDTO.dtEntrega() != null) {
                             tarefa.setDtEntrega(atualizarDTO.dtEntrega());
+                        }
+                        if (atualizarDTO.concluida() != null) {
+                            tarefa.setConcluida(atualizarDTO.concluida());
                         }
                         if (atualizarDTO.tags() != null) {
                             tarefa.setTags(atualizarDTO.tags());
@@ -202,21 +268,156 @@ public class TarefaService {
                                     membroRepository.save(novoMembro);
 
                                     System.out.println("✅ Adicionado membro: " + usuario.getNome());
+
+                                    try {
+                                        Usuario remetente = usuarioRepository.findByEmail(segurancaUtils.getUsuarioLogadoEmail())
+                                                .orElse(null);
+
+                                        notificacaoService.criarNotificacao(
+                                                TipoNotificacao.ATRIBUICAO,
+                                                "Nova tarefa atribuída",
+                                                (remetente != null ? remetente.getNome() : "Alguém") +
+                                                        " atribuiu você à tarefa '" + tarefa.getTitulo() + "'",
+                                                usuario,      // Destinatário
+                                                remetente,    // Quem atribuiu
+                                                tarefa        // Tarefa
+                                        );
+                                        System.out.println("📬 Notificação enviada para: " + usuario.getNome());
+                                    } catch (Exception e) {
+                                        System.err.println("⚠️ Erro ao enviar notificação: " + e.getMessage());
+                                    }
                                 }
                             }
 
                             System.out.println("💾 Membros atualizados com sucesso!");
                         }
 
-                        // Salvar tarefa
+                        // Salvar tarefa (primeira vez)
                         Tarefa tarefaSalva = tarefaRepository.save(tarefa);
-                        return converterParaDTO(tarefaSalva);
+
+                        // ✅ RENOMEAR PASTA NO DROPBOX SE O TÍTULO MUDOU
+                        if (atualizarDTO.titulo() != null &&
+                                !atualizarDTO.titulo().equals(tituloAntigo) &&
+                                dropboxPathAntigo != null &&
+                                !dropboxPathAntigo.isEmpty()) {
+                            try {
+                                Empresa empresa = tarefaSalva.getEmpresa();
+                                String empresaPasta = sanitizeName(empresa.getNome());
+                                String novaTarefaPasta = "Tarefa-" + tarefaSalva.getId() + "-" + sanitizeName(tarefaSalva.getTitulo());
+                                String novoPath = "/" + empresaPasta + "/" + novaTarefaPasta;
+
+                                // Renomeia a pasta no Dropbox
+                                dropboxService.renameFile(dropboxPathAntigo, novoPath);
+
+                                // Atualiza o path no banco
+                                tarefaSalva.setDropboxPath(novoPath);
+                                tarefaSalva = tarefaRepository.save(tarefaSalva); // Salva novamente com o novo path
+
+                                System.out.println("📝 Pasta renomeada no Dropbox:");
+                                System.out.println("   De: " + dropboxPathAntigo);
+                                System.out.println("   Para: " + novoPath);
+                            } catch (Exception e) {
+                                System.err.println("⚠️ Erro ao renomear pasta no Dropbox: " + e.getMessage());
+                                e.printStackTrace();
+                                // Não quebra a atualização se der erro no Dropbox
+                            }
+                        }
+                        // ✅ SINCRONIZAR COM GOOGLE CALENDAR SE DATA DE ENTREGA FOI ADICIONADA OU ALTERADA
+                        if (dataDeEntregaFoiAdicionada || (atualizarDTO.dtEntrega() != null && !atualizarDTO.dtEntrega().equals(dataEntregaAntiga))) {
+                            try {
+                                String emailUsuarioLogado = segurancaUtils.getUsuarioLogadoEmail();
+                                Usuario usuarioLogado = usuarioRepository.findByEmail(emailUsuarioLogado).orElse(null);
+
+                                if (usuarioLogado != null && usuarioLogado.getGoogleCalendarConectado() && tarefaSalva.getDtEntrega() != null) {
+                                    LocalDateTime dataEntrega = tarefaSalva.getDtEntrega();
+                                    LocalDateTime dataFim = dataEntrega.plusHours(1);
+
+                                    // ✅ VALIDAR QUE AS DATAS NÃO ESTÃO VAZIAS
+                                    if (dataEntrega != null && dataFim != null) {
+                                        // Se já existe evento, atualiza. Senão, cria novo
+                                        if (tarefaSalva.getGoogleEventId() != null && !tarefaSalva.getGoogleEventId().isEmpty()) {
+                                            try {
+                                                googleCalendarService.atualizarEvento(
+                                                        usuarioLogado,
+                                                        tarefaSalva.getGoogleEventId(),
+                                                        "📋 " + tarefaSalva.getTitulo(),
+                                                        "Vencimento de tarefa - " + tarefaSalva.getEmpresa().getNome() +
+                                                                (tarefaSalva.getDescricao() != null ? "\n\n" + tarefaSalva.getDescricao() : ""),
+                                                        dataEntrega,
+                                                        dataFim
+                                                );
+                                                System.out.println("✅ Evento atualizado no Google Calendar: " + tarefaSalva.getTitulo());
+                                            } catch (Exception e) {
+                                                System.err.println("⚠️ Erro ao atualizar evento (talvez foi deletado no Google). Criando novo...");
+                                                // Se falhou ao atualizar, cria um novo
+                                                com.google.api.services.calendar.model.Event evento = googleCalendarService.criarEvento(
+                                                        usuarioLogado,
+                                                        "📋 " + tarefaSalva.getTitulo(),
+                                                        "Vencimento de tarefa - " + tarefaSalva.getEmpresa().getNome() +
+                                                                (tarefaSalva.getDescricao() != null ? "\n\n" + tarefaSalva.getDescricao() : ""),
+                                                        dataEntrega,
+                                                        dataFim
+                                                );
+
+                                                tarefaSalva.setGoogleEventId(evento.getId());
+                                                tarefaRepository.save(tarefaSalva);
+                                            }
+                                        } else {
+                                            com.google.api.services.calendar.model.Event evento = googleCalendarService.criarEvento(
+                                                    usuarioLogado,
+                                                    "📋 " + tarefaSalva.getTitulo(),
+                                                    "Vencimento de tarefa - " + tarefaSalva.getEmpresa().getNome() +
+                                                            (tarefaSalva.getDescricao() != null ? "\n\n" + tarefaSalva.getDescricao() : ""),
+                                                    dataEntrega,
+                                                    dataFim
+                                            );
+
+                                            // Salvar o ID do evento do Google
+                                            tarefaSalva.setGoogleEventId(evento.getId());
+                                            tarefaRepository.save(tarefaSalva);
+
+                                            System.out.println("✅ Tarefa sincronizada com Google Calendar: " + tarefaSalva.getTitulo());
+                                        }
+                                    } else {
+                                        System.err.println("⚠️ Data de entrega inválida, não sincronizando com Google Calendar");
+                                    }
+                                }
+                            } catch (Exception e) {
+                                System.err.println("⚠️ Erro ao sincronizar com Google Calendar: " + e.getMessage());
+                                e.printStackTrace();
+                            }
+                        }
+
+
+
+
+                        BuscaTarefa tarefaAtualizada = converterParaDTO(tarefaSalva);
+
+                        // ✅ ✅ ✅ ENVIA EVENTO WEBSOCKET ✅ ✅ ✅
+                        try {
+                            TarefaEventoDTO evento = new TarefaEventoDTO();
+                            evento.setTipo("ATUALIZADA"); // ✅ STRING
+                            evento.setTarefaId(tarefaSalva.getId());
+                            evento.setListaId(tarefaAtualizada.listaId());
+                            evento.setTarefa(tarefaAtualizada);
+
+                            messagingTemplate.convertAndSend("/topic/tarefas", evento);
+                            System.out.println("📡 Evento WebSocket enviado: ATUALIZADA");
+                        } catch (Exception e) {
+                            System.err.println("⚠️ Erro ao enviar evento WebSocket: " + e.getMessage());
+                            // Não falha a operação se o WebSocket der erro
+                        }
+                        // ✅ ✅ ✅ FIM DO WEBSOCKET ✅ ✅ ✅
+
+                        return tarefaAtualizada;
                     });
         } catch (Exception e) {
             System.err.println("❌ Erro ao atualizar tarefa: " + e.getMessage());
             throw new RuntimeException("Erro ao atualizar tarefa: " + e.getMessage(), e);
         }
     }
+
+
 
     @Transactional
     public Optional<BuscaTarefa> arquivarTarefa(Long id) {
@@ -250,6 +451,9 @@ public class TarefaService {
 
         return tarefaRepository.findById(id)
                 .map(tarefa -> {
+                    // ✅ NOVO: Guarda a lista antiga ANTES de mover
+                    Long listaIdOrigem = tarefa.getLista() != null ? tarefa.getLista().getId() : null;
+
                     Lista novaLista = listaRepository.findById(moverDTO.novoListaId())
                             .orElseThrow(() -> new TarefaValidacaoException("Lista de destino não encontrada."));
 
@@ -268,14 +472,44 @@ public class TarefaService {
 
                     tarefaRepository.saveAll(tarefasDaLista);
 
-                    return converterParaDTO(tarefa);
+                    BuscaTarefa tarefaDTO = converterParaDTO(tarefa);
+
+                    // ✅ ATUALIZADO: Evento WebSocket com listaIdOrigem
+                    TarefaEventoDTO evento = new TarefaEventoDTO(
+                            "MOVIDA",
+                            id,
+                            moverDTO.novoListaId(),
+                            listaIdOrigem,  // ✅ NOVO: Lista de origem
+                            moverDTO.novaPosicao().intValue(),
+                            tarefaDTO,
+                            usuarioLogado.getNome()
+                    );
+                    messagingTemplate.convertAndSend("/topic/tarefas", evento);
+
+                    return tarefaDTO;
                 });
     }
+
+
+
 
     public boolean deletarTarefa(Long id) {
         try {
             if (tarefaRepository.existsById(id)) {
                 tarefaRepository.deleteById(id);
+
+                // ✅ WEBSOCKET: Enviar evento de tarefa deletada
+                TarefaEventoDTO evento = new TarefaEventoDTO(
+                        "DELETADA",
+                        id,
+                        null,
+                        null,
+                        null,
+                        null,
+                        "Sistema"
+                );
+                messagingTemplate.convertAndSend("/topic/tarefas", evento);
+
                 return true;
             }
             return false;
@@ -283,6 +517,7 @@ public class TarefaService {
             throw new RuntimeException("Erro ao deletar tarefa: " + e.getMessage(), e);
         }
     }
+
 
     public List<BuscaTarefa> getTarefasPorStatus(StatusTarefa status) {
         try {
@@ -397,29 +632,24 @@ public class TarefaService {
         }
     }
 
-    // ✅ MÉTODO ATUALIZADO - CONVERTE TAREFA PARA BUSCATAREFA
     private BuscaTarefa converterParaDTO(Tarefa tarefa) {
         try {
-            // ✅ Buscar membros da tarefa
             List<Membro> membros = membroRepository.findByTarefaId(tarefa.getId());
 
-            // ✅ Extrair IDs dos membros (tabela membro)
             List<Long> membroIds = membros.stream()
                     .map(Membro::getId)
                     .collect(Collectors.toList());
 
-            // ✅ Extrair IDs dos usuários (para filtro)
             List<Long> usuarioIds = membros.stream()
                     .map(membro -> membro.getUsuario().getId())
                     .collect(Collectors.toList());
 
-            // ✅ Criar lista de MembroSimplificadoDTO com username
             List<MembroSimplificadoDTO> membrosDTO = membros.stream()
                     .map(membro -> new MembroSimplificadoDTO(
                             membro.getId(),
                             membro.getUsuario().getId(),
                             membro.getUsuario().getNome(),
-                            membro.getUsuario().getEmail(),  // ✅ username = email
+                            membro.getUsuario().getEmail(),
                             membro.getUsuario().getFoto()
                     ))
                     .collect(Collectors.toList());
@@ -437,16 +667,20 @@ public class TarefaService {
                     tarefa.getDtCriacao(),
                     tarefa.getDtEntrega(),
                     tarefa.getDtConclusao(),
-                    tarefa.getTags() != null ? tarefa.getTags() : new ArrayList<>(),
+                    tarefa.getConcluida(),
+                    tarefa.getTags() != null ? tarefa.getTags() : List.of(),
                     tarefa.getObservacoes(),
-                    membroIds,     // ✅ IDs DOS MEMBROS
-                    usuarioIds,    // ✅ IDs DOS USUÁRIOS (PARA FILTRO)
-                    membrosDTO     // ✅ DETALHES DOS MEMBROS COM USERNAME
+                    membroIds,
+                    usuarioIds,
+                    membrosDTO,
+                    tarefa.getDropboxPath()  // ✅ ADICIONADO
             );
+
         } catch (Exception e) {
             throw new RuntimeException("Erro ao converter tarefa para DTO: " + e.getMessage(), e);
         }
     }
+
 
     // ✅ MÉTODO ATUALIZADO - DETALHAR TAREFA
     public Optional<DetalheTarefa> detalharTarefa(Long id) {
@@ -491,14 +725,54 @@ public class TarefaService {
                             tarefa.getDtCriacao(),
                             tarefa.getDtEntrega(),
                             tarefa.getDtConclusao(),
+                            tarefa.getConcluida(),
                             tarefa.getTags(),
                             anexosDTO,
                             checklistsDTO,
                             comentariosDTO,
                             membrosDTO,  // ✅ MEMBROS COM USERNAME
                             null,        // historico
-                            tarefa.getObservacoes()
+                            tarefa.getObservacoes(),
+                            tarefa.getDropboxPath()
                     );
                 });
     }
+    @Transactional
+    public BuscaTarefa marcarComoConcluida(Long id, Boolean concluida) {
+        System.out.println(concluida ? "✅ Marcando tarefa como concluída ID: " + id
+                : "❌ Desmarcando tarefa ID: " + id);
+
+        Tarefa tarefa = tarefaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tarefa não encontrada"));
+
+        tarefa.setConcluida(concluida);
+        Tarefa tarefaSalva = tarefaRepository.save(tarefa);
+
+        BuscaTarefa tarefaDTO = converterParaDTO(tarefaSalva);
+
+        // ✅ WEBSOCKET: Enviar evento de atualização
+        try {
+            String emailUsuarioLogado = segurancaUtils.getUsuarioLogadoEmail();
+            Usuario usuarioLogado = usuarioRepository.findByEmail(emailUsuarioLogado).orElse(null);
+
+            TarefaEventoDTO evento = new TarefaEventoDTO(
+                    "ATUALIZADA",
+                    tarefaSalva.getId(),
+                    tarefaDTO.listaId(),
+                    null,
+                    null,
+                    tarefaDTO,
+                    usuarioLogado != null ? usuarioLogado.getNome() : "Sistema"
+            );
+            messagingTemplate.convertAndSend("/topic/tarefas", evento);
+            System.out.println("📡 Evento WebSocket enviado: TAREFA CONCLUÍDA");
+        } catch (Exception e) {
+            System.err.println("⚠️ Erro ao enviar evento WebSocket: " + e.getMessage());
+        }
+
+        System.out.println(concluida ? "✅ Tarefa marcada como concluída!"
+                : "❌ Tarefa desmarcada!");
+        return tarefaDTO;
+    }
+
 }

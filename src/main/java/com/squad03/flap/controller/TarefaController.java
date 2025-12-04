@@ -20,11 +20,13 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+
 @RestController
 @RequestMapping("/tarefas")
 @CrossOrigin(origins = "*")
 @Tag(name = "Tarefas", description = "API para gerenciamento de tarefas do sistema Kanban")
 public class TarefaController {
+
 
     @Autowired
     private TarefaService tarefaService;
@@ -40,6 +42,19 @@ public class TarefaController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<?> searchTarefas(@RequestParam String query) {
+        try {
+            List<BuscaTarefa> resultados = tarefaService.buscarTarefasPorTitulo(query);
+            return ResponseEntity.ok(resultados);
+        } catch (Exception e) {
+            e.printStackTrace(); // <--- Veja no log!
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erro: " + e.getMessage());
+        }
+    }
+
+
 
     @GetMapping("/{id}")
     @Operation(summary = "Detalhar tarefa com dados completos", description = "Retorna uma tarefa específica com todos os dados complexos (anexos, checklist, etc.)")
@@ -221,4 +236,38 @@ public class TarefaController {
         List<BuscaAnexo> anexos = tarefaService.getAnexosPorTarefa(id);
         return ResponseEntity.ok(anexos);
     }
+
+    @PatchMapping("/{id}/concluir")
+    @Operation(summary = "Marcar/Desmarcar tarefa como concluída",
+            description = "Altera o status de conclusão da tarefa")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Tarefa atualizada com sucesso"),
+            @ApiResponse(responseCode = "404", description = "Tarefa não encontrada")
+    })
+    @PreAuthorize("hasAuthority('TAREFA_EDITAR_GERAL')")
+    public ResponseEntity<?> marcarComoConcluida(
+            @Parameter(description = "ID da tarefa") @PathVariable Long id,
+            @RequestBody java.util.Map<String, Boolean> request) {
+        try {
+            Boolean concluida = request.get("concluida");
+            if (concluida == null) {
+                return ResponseEntity.badRequest()
+                        .body(java.util.Map.of("message", "Campo 'concluida' é obrigatório"));
+            }
+
+            BuscaTarefa tarefaAtualizada = tarefaService.marcarComoConcluida(id, concluida);
+
+            return ResponseEntity.ok(java.util.Map.of(
+                    "message", concluida ? "Tarefa marcada como concluída" : "Tarefa desmarcada",
+                    "tarefa", tarefaAtualizada
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(java.util.Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(java.util.Map.of("message", "Erro ao atualizar tarefa: " + e.getMessage()));
+        }
+    }
+
 }

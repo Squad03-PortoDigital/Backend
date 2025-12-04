@@ -2,18 +2,8 @@ package com.squad03.flap.model;
 
 import com.squad03.flap.DTO.CadastroItem;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
-@Getter
-@Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Table(name = "item")
 public class Item {
 
@@ -24,7 +14,6 @@ public class Item {
     @Column(nullable = false, length = 255)
     private String nome;
 
-    @Builder.Default
     @Column(nullable = false)
     private Boolean status = false; // false = não concluído, true = concluído
 
@@ -46,6 +35,25 @@ public class Item {
         this.nome = cadastroItem.nome();
         this.status = cadastroItem.status() != null ? cadastroItem.status() : false;
         this.tarefa = tarefa;
+    }
+
+    public Item(Long id, String nome, Boolean status, Tarefa tarefa, Checklist checklist) {
+        this.id = id;
+        this.nome = nome;
+        this.status = status;
+        this.tarefa = tarefa;
+        this.checklist = checklist;
+    }
+
+    public Item() {
+    }
+
+    private static Boolean $default$status() {
+        return false;
+    }
+
+    public static ItemBuilder builder() {
+        return new ItemBuilder();
     }
 
     public Long getId() {
@@ -86,5 +94,55 @@ public class Item {
 
     public void setChecklist(Checklist checklist) {
         this.checklist = checklist;
+    }
+
+    public static class ItemBuilder {
+        private Long id;
+        private String nome;
+        private Boolean status$value;
+        private boolean status$set;
+        private Tarefa tarefa;
+        private Checklist checklist;
+
+        ItemBuilder() {
+        }
+
+        public ItemBuilder id(Long id) {
+            this.id = id;
+            return this;
+        }
+
+        public ItemBuilder nome(String nome) {
+            this.nome = nome;
+            return this;
+        }
+
+        public ItemBuilder status(Boolean status) {
+            this.status$value = status;
+            this.status$set = true;
+            return this;
+        }
+
+        public ItemBuilder tarefa(Tarefa tarefa) {
+            this.tarefa = tarefa;
+            return this;
+        }
+
+        public ItemBuilder checklist(Checklist checklist) {
+            this.checklist = checklist;
+            return this;
+        }
+
+        public Item build() {
+            Boolean status$value = this.status$value;
+            if (!this.status$set) {
+                status$value = Item.$default$status();
+            }
+            return new Item(this.id, this.nome, status$value, this.tarefa, this.checklist);
+        }
+
+        public String toString() {
+            return "Item.ItemBuilder(id=" + this.id + ", nome=" + this.nome + ", status$value=" + this.status$value + ", tarefa=" + this.tarefa + ", checklist=" + this.checklist + ")";
+        }
     }
 }
